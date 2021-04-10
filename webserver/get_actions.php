@@ -43,6 +43,6 @@
         $actions = "[" . $actions . "]";
         echo $actions;
     
-        #file_put_contents($filename, "");
+        file_put_contents($filename, "");
     }
 ?>
