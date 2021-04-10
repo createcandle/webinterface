@@ -3,49 +3,15 @@
     <div id="extension-webinterface-content-container">
         <h3 id="extension-webinterface-title"><!--<span id="extension-webinterface-icon"></span>-->Webinterface</h3>
 
-        <div id="extension-webinterface-list">
-        
-        
-        </div>
-        
-        
-        <div id="extension-webinterface-original-item" class="extension-webinterface-item">
-
-            <div class="extension-webinterface-item-setter">
-                
-                <div class="extension-webinterface-item-setter-part">
-                    <span class="extension-webinterface-leader">
-                        <select class="extension-webinterface-thing1" class="extension-webinterface-dropdown">
-                            <option value=""></option>
-                        </select><select class="extension-webinterface-property1" class="extension-webinterface-dropdown">
-                            <option value=""></option>
-                        </select>
-                    </span>
-                </div>
-            </div>
+        <div id="extension-webinterface-main">
+            <p>You can access the web interface from outside of your home by visiting this webpage:</p>
+            <a id="web-url" href="#"><button>Open</button></a>
             
-            <div class="extension-webinterface-item-menu">
-                <div class="extension-webinterface-item-left">
-                    <form class="rule-switch switch">
-                        <input type="checkbox" id="extension-webinterface-toggle-checkbox" class="switch-checkbox extension-webinterface-enabled">
-                        <label class="switch-slider" for="extension-webinterface-toggle-label">
-                        </label>
-                    </form>
-                </div>
-
-                <div class="extension-webinterface-item-right">
-
-                    <div class="extension-webinterface-item-delete-button">&nbsp;</div>
-                </div>
-            </div>
-        
-            <div class="rule-edit-overlay delete">
-                <div class="rule-delete-dialog">
-                    <p>Are you sure you want to remove this highlight permanently?</p>
-                    <input class="rule-delete-cancel-button" type="button" data-l10n-id="rule-delete-cancel-button" value="Cancel">
-                    <input class="rule-delete-confirm-button" type="button" value="Remove">
-                </div>
-            </div>
+            <p>There you can login with this anonymous ID:</p>
+            <input id="uuid"/>
+            <p>You can request a new anonymous ID by <span id="new-uuid-button">clicking here</span>.</p>
+            
+            <p>You can set the password in the <a href="/settings/addons/config/webinterface">settings page</a> of this addon.</p>
             
         </div>
 
@@ -59,8 +25,6 @@
         <br/>
 
     </div>
-    
-    <button id="extension-webinterface-add-button" class="icon-button" aria-label="New"></button>
     
 </div>
 
