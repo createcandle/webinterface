@@ -1,0 +1,7 @@
+RewriteCond %{HTTPS} !=on
+RewriteRule ^(.*) https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+<FilesMatch "\.(?:txt|json)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
