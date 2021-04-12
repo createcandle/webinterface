@@ -4,13 +4,14 @@ This is an alternative way to control your WebThings Gateway from outside of you
 ![webinterface_screenshot](https://github.com/createcandle/webinterface/blob/main/webinterface_screenshot.png?raw=true)
 
 
+
+# How does it work?
+
 This addon has two parts:
 - The actual addon for the Webthings Gateway.
 - A collection of PHP files that you place on a webserver of your choice. Alternatively, you can use the Candle webserver.
 
-
-# How does it work?
-The addon continously polls the webinterface to see if it's being used by someone (who has entered the correct password).
+The addon continously polls the webserver to see if someone (who has entered the correct password) is currently using it.
 When you are logged into the web interface, and you enter the correct password, the addon will upload encrpyted data about your things to the PHP server, from where the web interface will then download it, decrypt it, and display your things.
 You can now see the status of your devices, and change their values. 
 Any commands to change properties of your devices are encrypted and uploaded back to your webserver. Every second the addon downloads the latest commands from the webserver, decrypts them, and then executes them.
