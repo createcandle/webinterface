@@ -121,12 +121,7 @@ class WebinterfaceAPIHandler(APIHandler):
             
             
         if self.persistent_data['uuid'] == "":
-            a = requests.get('https://www.candlesmarthome.com/webinterface/uuid.php')
-            #print("actions data: " + str(a.content))
-            uuid_json = a.json()
-            print(str(uuid_json))
-            self.persistent_data['uuid'] = uuid_json['uuid']
-            self.save_persistent_data()
+            self.get_new_uuid()
             
         if 'enabled' not in self.persistent_data:
             self.persistent_data['enabled'] = True
@@ -169,7 +164,20 @@ class WebinterfaceAPIHandler(APIHandler):
         except:
             print("Error starting the clock thread")
 
-
+    def get_new_uuid(self):
+        # clear old data
+        r = requests.post(self.web_url + 'receiver.php', data={"hash":self.hash, "time":0 })
+        a = requests.post(self.web_url + 'get_actions.php', data={"hash":self.hash, "uuid":self.persistent_data['uuid'] })
+        
+        # get new UUID
+        a = requests.get(self.web_url + 'uuid.php')
+        #print("actions data: " + str(a.content))
+        uuid_json = a.json()
+        if self.DEBUG:
+            print("new anonymous ID: " + str(uuid_json))
+        if uuid_json['uuid'] != "error":
+            self.persistent_data['uuid'] = uuid_json['uuid']
+            self.save_persistent_data()
 
 
     # Read the settings from the add-on settings page
@@ -465,9 +473,18 @@ class WebinterfaceAPIHandler(APIHandler):
                     return APIResponse(
                       status=200,
                       content_type='application/json',
-                      content=json.dumps({'state' : True, 'message' : 'initialisation complete', 'persistent_data': self.persistent_data }),
+                      content=json.dumps({'state' : True, 'message' : '', 'web_url': self.web_url, 'persistent_data': self.persistent_data }),
                     )
                     
+                elif action == 'get_new_uuid':
+                    print('ajax handling get_new_uuid')
+                    self.get_new_uuid()
+                    time.sleep(.4)
+                    return APIResponse(
+                      status=200,
+                      content_type='application/json',
+                      content=json.dumps({'state' : True, 'message' : '', 'web_url': self.web_url, 'persistent_data': self.persistent_data }),
+                    )
                     
                 else:
                     return APIResponse(status=404)
@@ -733,7 +750,7 @@ class WebinterfaceDevice(Device):
                             {
                                 'title': "Annymous ID",
                                 'type': 'string',
-                                'readOnly': True,
+                                'readOnly': True
                             },
                             self.api_handler.persistent_data['uuid'])
 
