@@ -6,7 +6,8 @@
         "css/extension.css"
       ],
       "js": [
-        "js/extension.js"
+        "js/extension.js",
+		"js/qrcode.js"
       ]
     }
   ],
@@ -23,12 +24,12 @@
   "id": "webinterface",
   "license": "MPL-2.0",
   "manifest_version": 1,
-  "name": "Web interface",
+  "name": "Candle web interface",
   "options": {
     "default": {
       "Token": "",
 	  "Password": "change_me",
-	  "Web location": "https://www.candlesmarthome.com/webinterface/",
+	  "Web location": "https://www.candlesmarthome.com/web/",
       "Debugging": false
     },
     "schema": {
@@ -42,7 +43,7 @@
           "type": "string"
         },
         "Web location": {
-          "description": "The URL of the online location were you can access the web interface. You can use your own server if you prefer. By default you can use the Candle webserver at https://www.candlesmarthome.com/webinterface/.",
+          "description": "The URL of the online location were you can access the web interface. You can use your own server if you prefer. The default is the Candle webserver: https://www.candlesmarthome.com/webinterface/",
           "type": "string"
         },
         "Debugging": {
