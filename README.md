@@ -1,17 +1,13 @@
 # Web Interface
 This is an alternative way to control your WebThings Gateway from outside of your home.
 
-
 ![webinterface_screenshot](https://github.com/createcandle/webinterface/blob/main/webinterface_screenshot.png?raw=true)
 
 
--- PROOF OF CONCEPT, BE CAREFUL WHEN USING THIS --
-
-
-
 This addon has two parts:
-- A collection of PHP files that you place on a webserver of your choice.
 - The actual addon for the Webthings Gateway.
+- A collection of PHP files that you place on a webserver of your choice. Alternatively, you can use the Candle webserver.
+
 
 # How does it work?
 The addon continously polls the webinterface to see if it's being used by someone (who has entered the correct password).
