@@ -1,5 +1,6 @@
 <?php
     
+    header('Content-Type: application/json');
     
     if( !isset($_POST["hash"]) || !isset($_POST["uuid"]) ){
         #echo "missing hash and/or uuid and or data";
@@ -16,33 +17,35 @@
         
         $filename = './a/' . $uuid . '.txt';
         
-        $actions = file_get_contents($filename);
+        if (file_exists($filename)) {
+            $actions = file_get_contents($filename);
         
-        /*
-        echo "[";
+            /*
+            echo "[";
              
-        $separator = "\n";
-        $line = strtok($actions, $separator);
+            $separator = "\n";
+            $line = strtok($actions, $separator);
 
 
 
-        while ($line !== false) {
-            # do something with $line
-            $line = strtok( $separator );
-            if( strpos( $line, $hash ) !== false) {
-                echo $line . ",";
+            while ($line !== false) {
+                # do something with $line
+                $line = strtok( $separator );
+                if( strpos( $line, $hash ) !== false) {
+                    echo $line . ",";
+                }
             }
-        }
-        echo '{"done":true}]';
-        */
+            echo '{"done":true}]';
+            */
         
-        if(substr($actions, -1) == ','){
-            $actions = substr_replace($actions ,"",-1);
+            if(substr($actions, -1) == ','){
+                $actions = substr_replace($actions ,"",-1);
+            }
+    
+            $actions = "[" . $actions . "]";
+            echo $actions;
+    
+            file_put_contents($filename, "");
         }
-    
-        $actions = "[" . $actions . "]";
-        echo $actions;
-    
-        file_put_contents($filename, "");
     }
 ?>

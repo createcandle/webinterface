@@ -21,9 +21,10 @@
         $uuid = str_replace("/", "", $uuid);
         
         $filename = './a/' . $uuid . '.txt';
-        #file_put_contents('actions.txt', implode("\n", $gemList) . "\n", FILE_APPEND);
-        file_put_contents($filename, $line, FILE_APPEND);
         
+        if (file_exists($filename)) {
+             file_put_contents($filename, $line, FILE_APPEND);
+        }
 
     }
 

@@ -44,6 +44,7 @@
         //console.log("crypto-js:");
         //console.log(CryptoJS);
         
+        
         window.lasttime = 0;
         window.previous_things = {};
         window.things = {};
@@ -52,6 +53,18 @@
         window.remember_uuid = true;
         
         window.recent_changes = [];
+        
+        if(location.search.charAt(0) == '?'){
+            $('#uuid').val( location.search.substring(1) );
+        }
+        
+        
+        var debug = false;
+        console.log("location.search = " + location.search);
+        if( location.search == '?debug'){
+            console.log("Found ?debug in location URL");
+            debug = true;
+        }
         
         
         if (localStorage.getItem('uuid') !== null) {
