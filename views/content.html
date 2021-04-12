@@ -4,14 +4,30 @@
         <h3 id="extension-webinterface-title"><!--<span id="extension-webinterface-icon"></span>-->Webinterface</h3>
 
         <div id="extension-webinterface-main">
+            <p>&nbsp;</p>
             <p>You can access the web interface from outside of your home by visiting this webpage:</p>
-            <a id="web-url" href="#"><button>Open</button></a>
             
-            <p>There you can login with this anonymous ID:</p>
-            <input id="uuid"/>
-            <p>You can request a new anonymous ID by <span id="new-uuid-button">clicking here</span>.</p>
+            <div id="extension-webinterface-links">
+                <p><a id="extension-webinterface-web-url" target="_blank" href="#"><button>Open</button></a></p>
             
-            <p>You can set the password in the <a href="/settings/addons/config/webinterface">settings page</a> of this addon.</p>
+                <div id="extension-webinterface-qrcode-container">
+                    <div id="extension-webinterface-qrcode"></div>
+                </div>
+            </div>
+            <p>&nbsp;</p>
+            <p>To use your web interface you will need an anonymous ID and a password.</p>
+            <div id="extension-webinterface-two-column">
+                <div>
+                    <h3>Anonymous ID</h3>
+                    <p>This is your unique code. Unlike an email address is does not reveal anything meaningful about you:</p>
+                    <input id="extension-webinterface-uuid"/>
+                    <p>You can request a new anonymous ID at any time by <span id="extension-webinterface-new-uuid-button">clicking here</span>.</p>
+                </div>
+                <div>
+                    <h3>Password</h3>
+                    <p>You can set the password in the <a href="/settings/addons/config/webinterface">settings page</a> of this addon.</p>
+                </div>
+            
             
         </div>
 

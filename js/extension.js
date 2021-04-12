@@ -40,19 +40,64 @@
 		//const webinterface_dropdown = document.querySelectorAll(' #extension-webinterface-view #extension-webinterface-original-item .extension-webinterface-thing2')[0];
 	
 		pre.innerText = "";
-		
-  		// Get list of items
+        
+        const new_uuid_button = document.getElementById('extension-webinterface-new-uuid-button')
+        
+		new_uuid_button.addEventListener('click', (event) => {
+			console.log(event);
+            //var target = event.currentTarget;
+			//var parent3 = target.parentElement.parentElement.parentElement; //parent of "target"
+			//parent3.classList.add("delete");
+            if (confirm('Are you sure?')){
+          		this.update_data('get_new_uuid');	
+            }
+      		
+        });
+        
+        
+        this.update_data('init');
+
+	}
+	
+    
+    
+	update_data(action){
+        
+        const pre = document.getElementById('extension-webinterface-response-data');
+        
         window.API.postJson(
           `/extensions/${this.id}/api/ajax`,
-					    {'action':'init'}
+					    {'action':action}
 
         ).then((body) => {
-			//console.log("Python API result:");
-			//console.log(body);
+			console.log("Python API result:");
+			console.log(body);
 			//console.log(body['items']);
-			if(body['state'] == 'ok'){
+			if(body['state'] == true){
 				this.persistent_data = body['persistent_data'];
 				//this.regenerate_items();
+                
+                const qr_url = body['web_url'] + '?' + body['persistent_data']['uuid'];
+                
+                document.getElementById('extension-webinterface-uuid').value = body['persistent_data']['uuid'];
+                document.getElementById('extension-webinterface-web-url').children[0].innerText = body['web_url'];
+                document.getElementById('extension-webinterface-web-url').href = qr_url;
+                
+                
+                
+                const target_element = document.getElementById('extension-webinterface-qrcode')
+            	console.log("target_element:");
+            	console.log(target_element);
+
+                console.log(QRCode);
+
+            	var qrcode = new QRCode(target_element, {
+            		width : 300,
+            		height : 300
+            	});
+            	qrcode.makeCode(qr_url);
+                
+                
 			}
 			else{
 				console.log("not ok response while getting data");
@@ -64,11 +109,8 @@
   			//console.log("webinterface: error in calling init via API handler");
   			console.log(e.toString());
 			pre.innerText = "Loading items failed - connection error";
-        });		
-
+        });	
 	}
-	
-	
 	
 	//
 	//  REGENERATE ITEMS
@@ -330,6 +372,9 @@
 		
 		return { 'property1_list' : property1_list, 'property1_system_list' : property1_system_list };
 	}
+    
+    
+    
 	
   }
 
