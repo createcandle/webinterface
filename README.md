@@ -16,7 +16,11 @@ You can now see the status of your devices, and change their values.
 Any commands to change properties of your devices are encrypted and uploaded back to your webserver. Every second the addon downloads the latest commands from the webserver, decrypts them, and then executes them.
 
 ## Security & encryption
-To protect your privacy, this system does not keep the data on the webserver permanently. The webserver is continously trying to delete the data it has about your devices, and as soon as you are no longer on the web interface, the data is deleted. On top of that, the data that is temporarily stored is encrypted using AES256. The password for this data is only available to you (and is never transmitted over the internet). So even if the webserver was hacked, the attackers wouldn't learn anything about your home, and they wouldn't be able to get your password.
+
+
+![webinterface_screenshot](https://github.com/createcandle/webinterface/blob/main/webinterface_encryption.png?raw=true)
+
+To protect your privacy, this webserver only stores data for a few seconds in order to pass it along between your home and your mobile phone. While in transit the data is protected using AES256 encryption. The password for this data is only available to you (and is never transmitted over the internet). So even if the webserver was hacked, the attackers wouldn't learn anything about your home, and they wouldn't be able to get your password.
 
 It speaks for itself that when it comes to encryption, you should make sure your password is strong.
 
