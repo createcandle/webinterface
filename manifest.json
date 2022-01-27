@@ -1,5 +1,5 @@
 {
-  "author": "Candle smart home",
+  "author": "CandleSmartHome.com",
   "content_scripts": [
     {
       "css": [
@@ -44,7 +44,7 @@
         "Debugging": {
           "description": "Debugging allows you to diagnose any issues with the add-on. If enabled it will result in a lot more debug data in the internal log (which can be found under settings -> developer -> view internal logs).",
           "type": "boolean"
-        }			
+        }
       },
       "required": [
         "Token",
@@ -54,7 +54,7 @@
     }
   },
   "short_name": "webinterface",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "web_accessible_resources": [
     "css/*.css",
     "images/*.svg",
