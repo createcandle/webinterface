@@ -7,7 +7,7 @@
       ],
       "js": [
         "js/extension.js",
-		"js/qrcode.js"
+        "js/qrcode.js"
       ]
     }
   ],
@@ -28,7 +28,7 @@
   "options": {
     "default": {
       "Token": "",
-	  "Web location": "https://www.candlesmarthome.com/web/",
+      "Web location": "https://www.candlesmarthome.com/web/",
       "Debugging": false
     },
     "schema": {
@@ -48,13 +48,13 @@
       },
       "required": [
         "Token",
-		"Web location"
+        "Web location"
       ],
       "type": "object"
     }
   },
   "short_name": "webinterface",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "web_accessible_resources": [
     "css/*.css",
     "images/*.svg",
