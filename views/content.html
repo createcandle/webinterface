@@ -3,34 +3,109 @@
     <div id="extension-webinterface-content-container">
         <h3 id="extension-webinterface-title"><!--<span id="extension-webinterface-icon"></span>-->Webinterface</h3>
 
-        <div id="extension-webinterface-main">
-            <p>&nbsp;</p>
-            <p>You can access the web interface from outside of your home by visiting this webpage:</p>
+    	<div id="extension-webinterface-tab-buttons">
+            <button id="extension-webinterface-tab-button-access" class="extension-webinterface-main-tab-button extension-webinterface-tab-selected">Access</button>
+    		<button id="extension-webinterface-tab-button-account" class="extension-webinterface-main-tab-button">Account</button>
+            <button id="extension-webinterface-tab-button-things" class="extension-webinterface-main-tab-button">Things</button>
+            <button id="extension-webinterface-tab-button-help" class="extension-webinterface-main-tab-button">?</button>
+        </div>
             
-            <div id="extension-webinterface-links">
-                <p><a id="extension-webinterface-web-url" target="_blank" href="#"><button>Open</button></a></p>
+        <div id="extension-webinterface-tab-container">
             
-                <div id="extension-webinterface-qrcode-container">
+            <div id="extension-webinterface-tab-access" class="extension-webinterface-vlak extension-webinterface-tab">
+                
+                <div id="extension-webinterface-allow-toggle-container" class="extension-webinterface-vlak">
+                    <input type="checkbox" name="outside-access" id="extension-webinterface-outside-access" value="outside-access">
+                    <label for="extension-webinterface-outside-access">Allow outside access</label>
+                </div>
+                
+                
+                <p>You can access the web interface from outside your home by visiting this webpage:</p>
+                
+                <div id="extension-webinterface-web-url-container" class="extension-webinterface-vlak">
+                    <span id="extension-webinterface-web-url"></span>
+                
+                    <a id="extension-webinterface-web-url-button" target="_blank" href="#"><button>Visit</button></a>
+                
+                    <button id="extension-webinterface-show-qr-button">Show QR-Code</button>
+                </div>
+            
+                <div id="extension-webinterface-qrcode-container" style="display:none">
                     <div id="extension-webinterface-qrcode"></div>
                 </div>
+                
             </div>
-            <p>&nbsp;</p>
-            <p>To use your web interface you will need an anonymous ID and a password.</p>
-            <div id="extension-webinterface-two-column">
-                <div>
-                    <h3>Anonymous ID</h3>
-                    <p>This is your unique code. Unlike an email address is does not reveal anything meaningful about you:</p>
-                    <input id="extension-webinterface-uuid"/>
-                    <p>You can request a new anonymous ID at any time by <span id="extension-webinterface-new-uuid-button">clicking here</span>.</p>
+            
+            
+            <div id="extension-webinterface-tab-account" class="extension-webinterface-vlak extension-webinterface-tab extension-webinterface-hidden">
+                <p style="text-align:center">To use your web interface you will need an anonymous ID and a password.<br/><br/></p>
+                <div id="extension-webinterface-two-column">
+                    <div>
+                        <h3>Anonymous ID</h3>
+                        <p>This is your unique code. Unlike an email address or username, it does not reveal anything meaningful about you.</p>
+                        <input id="extension-webinterface-uuid"/><br/>
+                        <button id="extension-webinterface-new-uuid-button" type="button">Request new ID</button>
+                    </div>
+                    <div>
+                        <h3>Password</h3>
+                        <p>The password is stored on your controller, and is never transmitted to the outside world.</p>
+                        <input id="extension-webinterface-password1" type="password" placeholder="Password"/><br/>
+                    
+                        <p style="font-size:70%; margin-bottom:.1rem">Repeat your password:</p>
+                        <input id="extension-webinterface-password2" type="password" placeholder="Password"/>
+                        <br/>
+                        <button id="extension-webinterface-save-password" type="button">Save password</button>
+                        
+                    </div>
                 </div>
-                <div>
-                    <h3>Password</h3>
-                    <p>You can set the password in the <a href="/settings/addons/config/webinterface">settings page</a> of this addon.</p>
-                </div>
+            </div>
+            
+            
+            <div id="extension-webinterface-tab-things" class="extension-webinterface-vlak extension-webinterface-tab extension-webinterface-hidden">
+                <p style="text-align:center">Select which things should be made available through the web interface.<br/><br/></p>
+                <div id="extension-webinterface-thing-list"></div>
+                <div id="extension-webinterface-thing-list-button-container"><button id="extension-webinterface-thing-list-save-button">Save</button></div>
+                
+            </div>
+            
+            <div id="extension-webinterface-tab-help" class="extension-webinterface-vlak extension-webinterface-tab extension-webinterface-hidden">
+                
+                <h2>About the Web Interface</h2>
+                <p>Sometimes it can be useful to access your smart home from outside the home. The WebInterface makes this possible.</p>
+                <p>Importantly, you can choose when outside access is allowed, and which devices may be controlled.</p>
+                <h3>How it works</h3>
+                <p>Data between your home and your mobile browser is passed along by a relay server. It passes the messages along. It doesn't know who they belong to, and because the messages are encrypted it doesn't know what is in them.</p>
+                <p>Your encrypted messages are only stored on the server for a few seconds. If either your home or your mobile browser stops communicating, then the data is deleted.</p>
+                <p>Let's look at it step by step.</p>
+                <ul>
+                    <li>Intially, the relay has no data to pass along.</li>
+                    <li>You turn on the outside access and select which devices may be controlled. Your home controller now starts asking the relay server if anyone out there with your random ID wants access at that very moment. It does this every 10 seconds.</li>
+                    <li>If you open the web URL and enter your unique ID, then the relay will be told that someone want access to that ID. It now tells your home controller: yes, someone is out there.</li>
+                    <li>Only now will your home controller starts sending data about the state of your things to the relay. These messages have an expiry date of 15 seconds.</li>
+                    <li>Your mobile browser asks the webserver if there are any messages every 3 seconds. If your home controller sent data, the relay server will now pass it along to your mobile browser. After it has been passed along the relay deletes the message.</li>
+                    <li>Let's say you decided to switch on a light using the mobile browser. This creates an (encrypted) action message, which is sent to the relay. Your home controller (which has now picked up the pace) will download these messages, and acts on them. The light is switched on.</li>
+                    <li>Again, the relay deletes the message immediately after it has been passed along.</li>
+                    <li>If either side stops responding, the relay also deletes all messages.</li>
+                </ul>
+                <p>While someone is using outside access, the activity property of the <a href="/things/webinterface">Web Interface thing</a> will be switched on. You could use this to keep a log of when outside access is used.</p>
+                
+                <h3>Privacy</h3>
+                <p>The relay service is designed to know and remember as little about you as possible.</p>
+                <p>First of all, you don't need an account with an email address. From the relay server's perspective you are just an anonymous number. And you can change that number as often as you like.</p>
+                <p>The relay server also doesn't store your IP address. We really don't want to know anything about you.</p>
+                <h3>Security</h3>
+                <p>The relay server never has access to your password. All it does is forward the encrypted messages if the unique ID matches. The initial message also contain a 'hash' of your password. A hash is code that is a 'one-way' derivative of your password. It can be generated from your password, but your password cannot be generated from the code.</p>
+                <p>You could also run your own relay server on your webhosting; it's open source. If you already have a website, for example, then you could make that website act as a relay for your smart home. You can select your own server by changing the relay server URL in this addon's settings page.</p>
+                <h3>Nothing is free</h3>
+                <p>The messages that are passed back and forth are very small. For now, the Candle server offers this service for free because it doesn't cost a lot of bandwidth.</p>
+                <p>The relay also designed to be cheap to run. Firstly, the relay server can run on 'shared hosting', which is very affordable (and slow). On top of that, if you're not using the outside access, even less bandwidth is used. If you don't need outside access for the foreseeable future, please switch it off.</p>
+                <p>If the service becomes wildly popular we'll have to look into how to pay for it (or make it use even less data), but for now: enjoy.</p>
+            </div>
+            
+        </div>
             
             
         </div>
-
 
         <br/>
         <br/>

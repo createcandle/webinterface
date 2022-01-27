@@ -12,12 +12,13 @@
         .then((res) => res.text())
         .then((text) => {
          	this.content = text;
-			if( document.location.href.endsWith("webinterface") ){
+			if( document.location.href.endsWith("extensions/webinterface") ){
 				this.show();
 			}
         })
         .catch((e) => console.error('Failed to fetch content:', e));
     }
+
 
     show() {
 		//console.log("webinterface show called");
@@ -39,21 +40,168 @@
 		const leader_dropdown = document.querySelectorAll(' #extension-webinterface-view #extension-webinterface-original-item .extension-webinterface-thing1')[0];
 		//const webinterface_dropdown = document.querySelectorAll(' #extension-webinterface-view #extension-webinterface-original-item .extension-webinterface-thing2')[0];
 	
+    
+    
+    
+        var all_tabs = document.querySelectorAll('.extension-webinterface-tab');
+        var all_tab_buttons = document.querySelectorAll('.extension-webinterface-main-tab-button');
+        
+        for(var i=0; i< all_tab_buttons.length;i++){
+            all_tab_buttons[i].addEventListener('click', (event) => {
+    			console.log(event);
+                var desired_tab = event.target.innerText.toLowerCase();
+                console.log("desired tab: " + desired_tab);
+                if(desired_tab == '?'){desired_tab = 'help';}
+
+                for(var j=0; j<all_tabs.length;j++){
+                    all_tabs[j].classList.add('extension-webinterface-hidden');
+                    all_tab_buttons[j].classList.remove('extension-webinterface-tab-selected');
+                }
+                document.querySelector('#extension-webinterface-tab-button-' + desired_tab).classList.add('extension-webinterface-tab-selected'); // show tab
+                document.querySelector('#extension-webinterface-tab-' + desired_tab).classList.remove('extension-webinterface-hidden'); // show tab
+            });
+        };
+    
+    
+		document.getElementById('extension-webinterface-outside-access').addEventListener('change', (event) => {
+            console.log("clicked allow-access button");
+            console.log(event.target.checked);
+            
+            window.API.postJson(
+              `/extensions/${this.id}/api/ajax`,
+    					    {'action':'outside_access', 'state':event.target.checked}
+
+            ).then((body) => {
+    			console.log("Python API result:");
+    			console.log(body);
+                
+    			if(body['state'] == true){
+                    console.log("Settings was saved");
+    			}
+    			else{
+    				alert("Error: unable to save the setting.");
+    			}
+
+            }).catch((e) => {
+              	//pre.innerText = e.toString();
+      			//console.log("webinterface: error in calling save via API handler");
+      			console.log(e.toString());
+    			alert("Error: unable to save setting. Connection error?")
+            });	
+            
+        });
+       
+        
+    
 		pre.innerText = "";
         
-        const new_uuid_button = document.getElementById('extension-webinterface-new-uuid-button')
         
-		new_uuid_button.addEventListener('click', (event) => {
+        // New UUID
+		document.getElementById('extension-webinterface-new-uuid-button').addEventListener('click', (event) => {
+			console.log(event);
+            if (confirm('Are you sure?')){
+          		this.update_data('get_new_uuid');	
+            }
+        });
+        
+        
+        // Show QR
+        document.getElementById('extension-webinterface-show-qr-button').addEventListener('click', (event) => {
+            document.getElementById('extension-webinterface-qrcode-container').style.display = 'block';
+        });
+        
+        
+        // Save hash
+        document.getElementById('extension-webinterface-save-password').addEventListener('click', (event) => {
 			console.log(event);
             //var target = event.currentTarget;
 			//var parent3 = target.parentElement.parentElement.parentElement; //parent of "target"
 			//parent3.classList.add("delete");
-            if (confirm('Are you sure?')){
-          		this.update_data('get_new_uuid');	
+            
+            const password1 = document.getElementById('extension-webinterface-password1').value;
+            const password2 = document.getElementById('extension-webinterface-password2').value;
+            
+            if(password1 != password2){
+                alert("The passwords did not match");
+                return
+            }
+            
+            if(password1.length < 8){
+                alert("The passwords needs to be at least 8 characters long");
+                return
+            }
+            
+            if(password1.startsWith('12345')){
+                alert("Oh come one, that's not secure");
+                return
+            }
+            
+            if (confirm('Are you sure you want to change the password?')){
+          		
+                const hash = CryptoJS.SHA512(password1).toString(CryptoJS.enc.Hex);
+                
+                
+                window.API.postJson(
+                  `/extensions/${this.id}/api/ajax`,
+        					    {'action':'save_hash', 'hash':hash, 'password':password1}
+
+                ).then((body) => {
+        			console.log("Python API result:");
+        			console.log(body);
+                    
+        			if(body['state'] == true){
+                        alert("The password was saved");
+        			}
+        			else{
+        				console.log("not ok response while getting data");
+        				alert("Error: could not save password");
+        			}
+
+                }).catch((e) => {
+                  	//pre.innerText = e.toString();
+          			//console.log("webinterface: error in calling save via API handler");
+          			console.log(e.toString());
+        			pre.innerText = "password save failed - connection error";
+                });	
+                
             }
       		
         });
         
+        
+        document.getElementById('extension-webinterface-thing-list-save-button').addEventListener('click', (event) => {
+            console.log('save');
+            var checkboxes = document.querySelectorAll('#extension-webinterface-thing-list input');
+            
+            if(checkboxes.length > 0){
+                var allowed_things = [];
+                for (var t=0; t < checkboxes.length; t++) {
+                    if(checkboxes[t].checked){
+                        allowed_things.push(checkboxes[t].value);
+                    }
+                }
+                console.log("allowed_things: ", allowed_things);
+                
+                window.API.postJson(
+                  `/extensions/${this.id}/api/ajax`,
+        					    {'action':'save_allowed', 'allowed_things':allowed_things}
+
+                ).then((body) => {
+        			console.log("Python API result:");
+        			console.log(body);
+                    alert("Saved succesfully");
+
+                }).catch((e) => {
+                  	//pre.innerText = e.toString();
+          			//console.log("webinterface: error in calling init via API handler");
+          			console.log(e.toString());
+                    alert("Could not save. Connection error?");
+                });	
+                
+            }
+            else{console.log('no checkboxes in the list container?');}
+            
+        });
         
         this.update_data('init');
 
@@ -72,6 +220,7 @@
         ).then((body) => {
 			console.log("Python API result:");
 			console.log(body);
+
 			//console.log(body['items']);
 			if(body['state'] == true){
 				this.persistent_data = body['persistent_data'];
@@ -80,8 +229,8 @@
                 const qr_url = body['web_url'] + '?' + body['persistent_data']['uuid'];
                 
                 document.getElementById('extension-webinterface-uuid').value = body['persistent_data']['uuid'];
-                document.getElementById('extension-webinterface-web-url').children[0].innerText = body['web_url'];
-                document.getElementById('extension-webinterface-web-url').href = qr_url;
+                document.getElementById('extension-webinterface-web-url').innerText = body['web_url'];
+                document.getElementById('extension-webinterface-web-url-button').href = qr_url;
                 
                 
                 
@@ -97,12 +246,100 @@
             	});
             	qrcode.makeCode(qr_url);
                 
+                if(action == 'init'){
+                    console.log('init response');
+                    
+                    if(typeof body.persistent_data != 'undefined'){
+                        if(typeof body.persistent_data.enabled != 'undefined'){
+                            document.getElementById('extension-webinterface-outside-access').checked = body.persistent_data.enabled;
+                        }
+                    }
+                    
+                    
+                    
+                    const thing_list = document.getElementById('extension-webinterface-thing-list');
+                    thing_list.innerHTML = "";
+                    
+                    body.things.sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase()) ? 1 : -1) // sort alphabetically
+                    
+    				// Loop over all items
+    				for( var index in body.things ){
+					    try{
+                            const item = body.things[index];
+                            //console.log("item: ", item);
+        					//var clone = original.cloneNode(true);
+        					//clone.removeAttribute('id');
+                    
+                            //var station_name = "Error";
+                            //var stream_url = "Error";
+                            var container = checkbox = document.createElement('div');
+                            container.classList.add('extension-webinterface-item')
+                        
+                            var checkbox = document.createElement('input');
+                            checkbox.type = "checkbox";
+                            checkbox.name = item.name;
+                            checkbox.id = item.name;
+                            checkbox.value = item.name;
+                            //checkbox.id = "id";
+                            if(typeof body.persistent_data.allowed_things != 'undefined'){
+                                if( body.persistent_data.allowed_things.indexOf(item.name) > -1){
+                                    checkbox.checked = true;
+                                }
+                            }
+                            
+                        
+
+                            var label = document.createElement('label');
+                            label.htmlFor = item.name;
+                            //label.appendChild(checkbox);
+                            label.appendChild(document.createTextNode(item.title));
+                            
+                            container.appendChild(checkbox);
+                            container.appendChild(label);
+                        
+                            thing_list.appendChild(container);
+					    }
+                        catch(e){
+                            console.log("Error generating an item: ", e);
+                        }
+                        
+                        /*
+                        var s = document.createElement("span");
+    					s.classList.add('extension-internet-radio-tag');                
+    					var t = document.createTextNode(tags_array[i]);
+    					s.appendChild(t);        
+                        tags_container.append(s);
+                        */
+                        /*
+                        station_name = items[item].name;
+                        stream_url = items[item].url_resolved;
+                    
+                        // Add tags
+                        if(typeof item.title != "undefined"){
+                            //const tags_array = items[item].tags.split(",");
+                            //const tags_container = clone.getElementsByClassName("extension-internet-radio-item-tags")[0]
+                            for (var i = 0; i < tags_array.length; i++) {
+            					if(tags_array[i].length > 2){
+                                    
+            					}
+                            
+                            }
+                        
+                            //clone.getElementsByClassName("extension-internet-radio-item-tags")[0].innerText = items[item].tags;
+                        }
+                        */
+                    }
+                
+                }
+                document.getElementById('extension-webinterface-thing-list-button-container').style.display = 'block;'
+                
                 
 			}
 			else{
 				console.log("not ok response while getting data");
 				pre.innerText = body['message'];
 			}
+            
 
         }).catch((e) => {
           	//pre.innerText = e.toString();
@@ -110,229 +347,6 @@
   			console.log(e.toString());
 			pre.innerText = "Loading items failed - connection error";
         });	
-	}
-	
-	//
-	//  REGENERATE ITEMS
-	//
-	
-	regenerate_items(){
-		
-		//console.log("regenerating");
-		//console.log("this.all_things = ");
-		//console.log(this.all_things);
-		//console.log(this.items_list);
-		
-		//const leader_property_dropdown = document.querySelectorAll(' #extension-webinterface-view #extension-webinterface-original-item .extension-webinterface-property2')[0];
-		//const highlight_property_dropdown = document.querySelectorAll(' #extension-webinterface-view #extension-webinterface-original-item .extension-webinterface-property2')[0];
-		
-		
-		try {
-			const items = this.items_list
-		
-			const original = document.getElementById('extension-webinterface-original-item');
-			const list = document.getElementById('extension-webinterface-list');
-			list.innerHTML = "";
-		
-			// Loop over all items
-			for( var item in items ){
-				var clone = original.cloneNode(true);
-				clone.removeAttribute('id');
-
-				// Add delete button click event
-				const delete_button = clone.querySelectorAll('.extension-webinterface-item-delete-button')[0];
-				delete_button.addEventListener('click', (event) => {
-					var target = event.currentTarget;
-					var parent3 = target.parentElement.parentElement.parentElement; //parent of "target"
-					parent3.classList.add("delete");
-			  });
-			
-				const final_delete_button = clone.querySelectorAll('.rule-delete-confirm-button')[0];
-				final_delete_button.addEventListener('click', (event) => {
-					var target = event.currentTarget;
-					var parent3 = target.parentElement.parentElement.parentElement; //parent of "target"
-					var parent4 = parent3.parentElement;
-					parent4.removeChild(parent3);
-					parent4.dispatchEvent( new CustomEvent('change',{bubbles:true}) );
-				});
-			
-				const cancel_delete_button = clone.querySelectorAll('.rule-delete-cancel-button')[0];
-				cancel_delete_button.addEventListener('click', (event) => {
-					var target = event.currentTarget;
-					var parent3 = target.parentElement.parentElement.parentElement;
-					parent3.classList.remove("delete");
-				});
-				
-				// Change switch icon
-				clone.querySelectorAll('.switch-checkbox')[0].id = 'toggle' + this.item_number;
-				clone.querySelectorAll('.switch-slider')[0].htmlFor = 'toggle' + this.item_number;
-				this.item_number++;
-				
-				
-			
-				// Populate the properties dropdown
-				try{
-					for( var thing in this.all_things ){
-						//console.log("this.all_things[thing]['id'] = " + this.all_things[thing]['id']);
-						//console.log("items[item]['thing1'] = " + items[item]['thing1']);
-						
-						if( this.all_things[thing]['id'].endsWith( items[item]['thing1'] ) ){
-							//console.log("bingo, at thing1. Now to grab properties:");
-							//console.log(this.all_things[thing]);
-							//console.log(this.all_things[thing]['properties']);
-							const property1_dropdown = clone.querySelectorAll('.extension-webinterface-property1')[0];
-							const property_lists = this.get_property_lists(this.all_things[thing]['properties']);
-							//console.log("property lists:");
-							//console.log(property_lists);
-							
-							for( var title in property_lists['property1_list'] ){
-								//console.log("adding prop title:" + property_lists['property1_list'][title]);
-								property1_dropdown.options[property1_dropdown.options.length] = new Option(property_lists['property1_list'][title], property_lists['property1_system_list'][title]);
-							}
-						}
-					}
-				}
-				catch (e) {
-					console.log("Could not loop over all_things: " + e); // pass exception object to error handler
-				}
-				
-			
-				// Update to the actual values of regenerated item
-				for(var key in this.item_elements){
-					try {
-						if(this.item_elements[key] != 'enabled'){
-							clone.querySelectorAll('.extension-webinterface-' + this.item_elements[key] )[0].value = items[item][ this.item_elements[key] ];
-						}
-					}
-					catch (e) {
-						//console.log("Could not regenerate actual values of highlight: " + e);
-					}
-				}
-				
-				// Set enabled state of regenerated item
-				if(items[item]['enabled'] == true){
-					//clone.querySelectorAll('.extension-webinterface-enabled')[0].removeAttribute('checked');
-					clone.querySelectorAll('.extension-webinterface-enabled' )[0].checked = items[item]['enabled'];
-				}
-				list.append(clone);
-			}
-			
-			
-
-			//
-			//  Change listener. Called if the user changes anything in the existing items in the list. Mainly used to update properties if a new thing is selected.
-			//
-			
-			list.addEventListener('change', (event) => {
-				//console.log("changed");
-				//console.log(event);
-				
-				try {
-					
-					// Loops over all the things, and when a thing matches the changed element, its properties list is updated.
-					for( var thing in this.all_things ){
-						//console.log( this.all_things[thing] );
-						
-						if( this.all_things[thing]['id'].endsWith( event['target'].value ) ){
-							const property_dropdown = event['target'].nextSibling;
-							//console.log(property_dropdown);
-							const property_lists = this.get_property_lists(this.all_things[thing]['properties']);
-							try{
-								if(property_dropdown !== undefined){
-									if('options' in property_dropdown){
-										var select_length = property_dropdown.options.length;
-										for (var i = select_length-1; i >= 0; i--) {
-											property_dropdown.options[i] = null;
-										}
-									}
-								}
-								
-							}
-							catch(e){
-								console.log("error clearing property dropdown select options: " + e);
-							}
-							
-							// If thing1 dropdown was changed, update its property titles
-							if( event['target'].classList.contains("extension-webinterface-thing1") ){
-								//console.log("changed thing1 dropdown");
-								for( var title in property_lists['property1_list'] ){
-									property_dropdown.options[property_dropdown.options.length] = new Option(property_lists['property1_list'][title], property_lists['property1_system_list'][title]);
-								}
-								
-								// If the thing selector is changed, always disable the item.
-								var item_element = event['target'].parentElement.parentElement.parentElement.parentElement;
-								item_element.querySelectorAll('.extension-webinterface-enabled')[0].checked = false;
-							}
-						}
-					}
-					
-				}
-				catch (e) {
-					console.log("error handling change in highlight: " + e);
-				}
-				
-				var updated_values = [];
-				const item_list = document.querySelectorAll('#extension-webinterface-list .extension-webinterface-item');
-				
-				// Loop over all the elements
-				item_list.forEach(item => {
-					var new_values = {};
-					var incomplete = false;
-					
-					// For each item in the webinterface list, loop over all values in the item to check if they are filled.
-					for (let value_name in this.item_elements){
-						try{
-							const new_value = item.querySelectorAll('.extension-webinterface-' + this.item_elements[value_name])[0].value;
-							//console.log("new_value = " + new_value);
-							//console.log("new_value.length = " + new_value.length);
-							if(new_value.length > 0){
-								new_values[ this.item_elements[value_name] ] = item.querySelectorAll('.extension-webinterface-' + this.item_elements[value_name])[0].value;
-							}
-							else{
-								incomplete = true;
-							}
-						}
-						catch(e){console.log("Error checking all values of item: " + e);}
-					}
-					//item.classList.remove('new');
-					// Check if this item is enabled
-					new_values['enabled'] = item.querySelectorAll('.extension-webinterface-enabled')[0].checked;
-					
-					updated_values.push(new_values);
-					
-				});
-				
-				//console.log("updated_values:");
-				//console.log(updated_values);
-				
-				
-				
-				// Store the updated list
-				this.items_list = updated_values;
-				
-				// Send new values to backend
-				window.API.postJson(
-					`/extensions/${this.id}/api/update_items`,
-					{'items':updated_values}
-				).then((body) => { 
-					//thing_list.innerText = body['state'];
-					//console.log(body); 
-					if( body['state'] != 'ok' ){
-						pre.innerText = body['state'];
-					}
-
-				}).catch((e) => {
-					console.log("webinterface: error in save items handler");
-					pre.innerText = e.toString();
-				});
-				
-			});
-			
-		}
-		catch (e) {
-			// statements to handle any exceptions
-			console.log(e); // pass exception object to error handler
-		}
 	}
 	
 
