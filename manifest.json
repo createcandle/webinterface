@@ -28,7 +28,6 @@
   "options": {
     "default": {
       "Token": "",
-	  "Password": "change_me",
 	  "Web location": "https://www.candlesmarthome.com/web/",
       "Debugging": false
     },
@@ -36,10 +35,6 @@
       "properties": {
         "Authorization token": {
           "description": "To be allowed to get information on all your devices, you have to create an 'authorization' code. It's basically a very long password. You can generate it yourself under Settings -> Developer -> Create local authorization",
-          "type": "string"
-        },
-        "Password": {
-          "description": "The password to be used in the web interface. Make sure it's secure, because it's used to encrypt your data.",
           "type": "string"
         },
         "Web location": {
@@ -53,14 +48,13 @@
       },
       "required": [
         "Token",
-		"Password",
 		"Web location"
       ],
       "type": "object"
     }
   },
   "short_name": "webinterface",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "web_accessible_resources": [
     "css/*.css",
     "images/*.svg",
