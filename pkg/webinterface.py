@@ -474,7 +474,10 @@ class WebinterfaceAPIHandler(APIHandler):
                 except Exception as ex:
                     print("update things: no thing name?" + str(ex))
                 
-                if thing_name not in self.persistent_data['allowed_things']:
+                if 'allowed_things' in self.persistent_data:
+                    if thing_name not in self.persistent_data['allowed_things']:
+                        continue
+                else:
                     continue
                 
                 for prop in thing['properties']:
@@ -531,10 +534,11 @@ class WebinterfaceAPIHandler(APIHandler):
             for thing in self.things:
                 try:
                     thing_name = thing['href'].rsplit('/', 1)[-1]
-                    if thing_name in self.persistent_data['allowed_things']:
-                        # TODO maybe implement a system that checks if things have changed since last time, and only send those.
-                        print("allowed thing: " + str(thing_name))
-                        to_send.append(thing)
+                    if 'allowed_things' in self.persistent_data:
+                        if thing_name in self.persistent_data['allowed_things']:
+                            # TODO maybe implement a system that checks if things have changed since last time, and only send those.
+                            print("allowed thing: " + str(thing_name))
+                            to_send.append(thing)
                 
                 except Exception as ex:
                     print("error in creating allowed things data: " + str(ex))
