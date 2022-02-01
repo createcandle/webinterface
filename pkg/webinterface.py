@@ -9,13 +9,12 @@ import time
 from time import sleep
 import uuid
 import base64
-import keyring
 import requests
 from passlib.hash import pbkdf2_sha512
 import hashlib
 import threading
 from AesEverywhere import aes256
-
+#import secretstorage
 
 try:
     from gateway_addon import APIHandler, APIResponse, Adapter, Device, Property, Database
@@ -344,7 +343,9 @@ class WebinterfaceAPIHandler(APIHandler):
                                                 encrypted = message['encrypted']
                                                 if self.DEBUG:
                                                     print("action encrypted = " + str(encrypted))
-                                                decrypted = aes256.decrypt(encrypted, keyring.get_password('webinterface', webinterface) ) #self.persistent_data['password'])
+                                                #decrypted = aes256.decrypt(encrypted, keyring.get_password('webinterface', webinterface) ) #self.persistent_data['password'])
+                                                decrypted = aes256.decrypt(encrypted, self.persistent_data['password'] )
+                                                
                                                 if self.DEBUG:
                                                     print("actions decrypted = " + str(decrypted))
                                                 action = json.loads( decrypted )
@@ -385,7 +386,8 @@ class WebinterfaceAPIHandler(APIHandler):
                                         things_string = json.dumps(self.things_to_send)
                                         if self.DEBUG:
                                             print("sending: " + str(things_string))
-                                        encrypted_string = aes256.encrypt(things_string, keyring.get_password('webinterface', webinterface))
+                                        #encrypted_string = aes256.encrypt(things_string, keyring.get_password('webinterface', webinterface))
+                                        encrypted_string = aes256.encrypt(things_string, self.persistent_data['password'])
                                         #encoded_string = encrypted_string.decode('utf-8')
                                         #print("encrypted string: ")
                                         #print(str(encrypted_string.decode('utf-8')))
@@ -590,9 +592,16 @@ class WebinterfaceAPIHandler(APIHandler):
                         
                     #self.persistent_data['password'] = str(request.body['password'])
                     try:
-                        keyring.set_password("webinterface", "webinterface", str(request.body['password']))
+                        #connection = secretstorage.dbus_init()
+                        #collection = secretstorage.get_default_collection(connection)
+                        #attributes = {'application': 'webinterface', 'password': str(request.body['password'])}
+                        #item = collection.create_item('webinterface', attributes, b'pa$$word')
+                            
+                        #keyring.set_password("webinterface", "webinterface", str(request.body['password']))
+                        self.persistent_data['password'] = str(request.body['password'])
+                        
                     except Exception as ex:
-                        print("Error saving password in keyring: " + str(ex))
+                        print("Error saving password in secure storage: " + str(ex))
                     
                     self.persistent_data['hash'] = str(request.body['hash']) # if the browser UI generates the hash, it might improve cmopatibiity, since the same libraries will be used.
                     #self.persistent_data['hash'] = str( hashlib.sha512( bytes(self.persistent_data['password'], 'utf-8') ).hexdigest() )
