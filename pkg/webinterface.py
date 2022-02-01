@@ -130,6 +130,7 @@ class WebinterfaceAPIHandler(APIHandler):
             self.save_persistent_data()
             
         if 'hash' not in self.persistent_data:
+            self.persistent_data['hash'] = None
             self.missing_hash = True
             
         # Intiate extension addon API handler
@@ -188,8 +189,9 @@ class WebinterfaceAPIHandler(APIHandler):
 
     def get_new_uuid(self):
         # clear old data
-        r = requests.post(self.web_url + 'receiver.php', data={"hash":self.persistent_data['hash'], "time":0 })
-        a = requests.post(self.web_url + 'get_actions.php', data={"hash":self.persistent_data['hash'], "uuid":self.persistent_data['uuid'] })
+        if self.persistent_data['hash'] != None:
+            r = requests.post(self.web_url + 'receiver.php', data={"hash":self.persistent_data['hash'], "time":0 })
+            a = requests.post(self.web_url + 'get_actions.php', data={"hash":self.persistent_data['hash'], "uuid":self.persistent_data['uuid'] })
         
         # get new UUID
         a = requests.get(self.web_url + 'uuid.php')
@@ -285,7 +287,12 @@ class WebinterfaceAPIHandler(APIHandler):
                     if self.DEBUG:
                         print("missing hash: " + str(self.persistent_data))
                     continue
-                
+                    
+                if self.persistent_data['hash'] == None:
+                    if self.DEBUG:
+                        print("hash was still none: " + str(self.persistent_data))
+                    continue
+                    
                 if self.persistent_data['enabled']:
                     self.previous_enabled_state = True
                     #print("Did the things API call. Self.things is now:")
