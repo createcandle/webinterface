@@ -189,10 +189,11 @@ class WebinterfaceAPIHandler(APIHandler):
 
     def get_new_uuid(self):
         # clear old data
-        if self.persistent_data['hash'] != None:
-            r = requests.post(self.web_url + 'receiver.php', data={"hash":self.persistent_data['hash'], "time":0 })
-            a = requests.post(self.web_url + 'get_actions.php', data={"hash":self.persistent_data['hash'], "uuid":self.persistent_data['uuid'] })
-        
+        if 'hash' in self.persistent_data:
+            if self.persistent_data['hash'] != None:
+                r = requests.post(self.web_url + 'receiver.php', data={"hash":self.persistent_data['hash'], "time":0 })
+                a = requests.post(self.web_url + 'get_actions.php', data={"hash":self.persistent_data['hash'], "uuid":self.persistent_data['uuid'] })
+              
         # get new UUID
         a = requests.get(self.web_url + 'uuid.php')
         #print("actions data: " + str(a.content))
