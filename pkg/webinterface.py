@@ -285,13 +285,13 @@ class WebinterfaceAPIHandler(APIHandler):
                 
                 #if not hasattr(self.persistent_data, 'hash'):
                 if not 'hash' in self.persistent_data:
-                    if self.DEBUG:
-                        print("missing hash: " + str(self.persistent_data))
+                    #if self.DEBUG:
+                    #    print("missing hash: " + str(self.persistent_data))
                     continue
                     
                 if self.persistent_data['hash'] == None:
-                    if self.DEBUG:
-                        print("hash was still none: " + str(self.persistent_data))
+                    #if self.DEBUG:
+                    #    print("hash was still none: " + str(self.persistent_data))
                     continue
                     
                 if self.persistent_data['enabled']:
