@@ -229,7 +229,8 @@ class WebinterfaceAPIHandler(APIHandler):
             
         except:
             print("Error! Failed to open settings database.")
-        
+            self.close_proxy()
+            return
         
         if not config:
             print("Error loading config from database")
@@ -348,34 +349,38 @@ class WebinterfaceAPIHandler(APIHandler):
                                         a = requests.post(self.web_url + 'get_actions.php', data={"hash":self.persistent_data['hash'], "uuid":self.persistent_data['uuid'] })
                                         if self.DEBUG:
                                             print("actions data: " + str(a.content))
-                                        messages = a.json()
-                                        if self.DEBUG:
-                                            print(str("message json: " + str(messages))) 
-                                        #print(aes256.decrypt(encrypted, self.persistent_data['hash']))
-                                        for message in messages:
-                                            if 'encrypted' in message:
-                                                encrypted = message['encrypted']
-                                                if self.DEBUG:
-                                                    print("action encrypted = " + str(encrypted))
-                                                #decrypted = aes256.decrypt(encrypted, keyring.get_password('webinterface', webinterface) ) #self.persistent_data['password'])
-                                                decrypted = aes256.decrypt(encrypted, self.persistent_data['password'] )
+                                            
+                                        if len(str(a.content)) > 5:
+                                            
+                                            messages = a.json()
+                                            if self.DEBUG:
+                                                print(str("message json: " + str(messages))) 
+                                            #print(aes256.decrypt(encrypted, self.persistent_data['hash']))
+                                            for message in messages:
+                                                if 'encrypted' in message:
+                                                    encrypted = message['encrypted']
+                                                    if self.DEBUG:
+                                                        print("action encrypted = " + str(encrypted))
+                                                    #decrypted = aes256.decrypt(encrypted, keyring.get_password('webinterface', webinterface) ) #self.persistent_data['password'])
+                                                    decrypted = aes256.decrypt(encrypted, self.persistent_data['password'] )
                                                 
-                                                if self.DEBUG:
-                                                    print("actions decrypted = " + str(decrypted))
-                                                action = json.loads( decrypted )
-                                                if self.DEBUG:
-                                                    print("action dict: " + str(action))
-                                                #for action in actions:
-                                                #print("action url: " + str(action['url']))
-                                                #print("action value: " + str(action['value']))
-                                                #print("action: " + str(action))
+                                                    if self.DEBUG:
+                                                        print("actions decrypted = " + str(decrypted))
+                                                    action = json.loads( decrypted )
+                                                    if self.DEBUG:
+                                                        print("action dict: " + str(action))
+                                                    #for action in actions:
+                                                    #print("action url: " + str(action['url']))
+                                                    #print("action value: " + str(action['value']))
+                                                    #print("action: " + str(action))
                             
-                                                prop_id = os.path.basename(os.path.normpath( action['url'] ))
-                                                #print("prop_id = " + str(prop_id))
-                                                #print("action['value'] = " + str(action['value']))
-                                                data_to_put = { str(prop_id) : action['value'] }
-                                                #print("data_to_put = " + str(data_to_put))
-                                                api_put_result = self.api_put( action['url'], data_to_put )
+                                                    prop_id = os.path.basename(os.path.normpath( action['url'] ))
+                                                    #print("prop_id = " + str(prop_id))
+                                                    #print("action['value'] = " + str(action['value']))
+                                                    data_to_put = { str(prop_id) : action['value'] }
+                                                    #print("data_to_put = " + str(data_to_put))
+                                                    api_put_result = self.api_put( action['url'], data_to_put )
+                                                    
                                     except Exception as ex:
                                         print("Error getting or handling latest action messages: " + str(ex))
                             
@@ -630,7 +635,7 @@ class WebinterfaceAPIHandler(APIHandler):
                     return APIResponse(
                       status=200,
                       content_type='application/json',
-                      content=json.dumps({'state' : True, 'message' : '', 'web_url': self.web_url, 'persistent_data': persist }),
+                      content=json.dumps({'state' : True, 'message' : '', 'web_url': self.web_url, 'persistent_data': self.persistent_data }),
                     )
                     
                 # Save which devices may be accessed
