@@ -17,6 +17,9 @@
 			}
         })
         .catch((e) => console.error('Failed to fetch content:', e));
+        
+        console.log("CryptoJS:");
+        console.log(window.CryptoJS);
     }
 
 

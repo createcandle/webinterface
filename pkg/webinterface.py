@@ -623,8 +623,8 @@ class WebinterfaceAPIHandler(APIHandler):
                     except Exception as ex:
                         print("Error saving password in secure storage: " + str(ex))
                     
-                    self.persistent_data['hash'] = str(request.body['hash']) # if the browser UI generates the hash, it might improve cmopatibiity, since the same libraries will be used.
-                    #self.persistent_data['hash'] = str( hashlib.sha512( bytes(self.persistent_data['password'], 'utf-8') ).hexdigest() )
+                    #self.persistent_data['hash'] = str(request.body['hash']) # if the browser UI generates the hash, it might improve cmopatibiity, since the same libraries will be used.
+                    self.persistent_data['hash'] = str( hashlib.sha512( bytes(self.persistent_data['password'], 'utf-8') ).hexdigest() )
                     self.save_persistent_data()
                     
                     return APIResponse(
@@ -724,7 +724,7 @@ class WebinterfaceAPIHandler(APIHandler):
         #print("GET TOKEN = " + str(self.token))
         if self.token == None:
             print("API GET: PLEASE ENTER YOUR AUTHORIZATION CODE IN THE SETTINGS PAGE")
-            self.set_status_on_thing("Authorization code missing, check settings")
+            #self.set_status_on_thing("Authorization code missing, check settings")
             return []
         
         try:
@@ -772,8 +772,6 @@ class WebinterfaceAPIHandler(APIHandler):
         except Exception as ex:
             print("Error doing http request/loading returned json: " + str(ex))
             
-            if self.DEBUG:
-                self.speak("I could not connect to API. ", intent=intent)
             #return [] # or should this be {} ? Depends on the call perhaps.
             return {"error": 500}
 
@@ -845,8 +843,7 @@ class WebinterfaceAPIHandler(APIHandler):
 
         except Exception as ex:
             print("Error doing http request/loading returned json: " + str(ex))
-            if self.DEBUG:
-                self.speak("I could not connect. ", intent=intent)
+            
             #return {"error": "I could not connect to the web things gateway"}
             #return [] # or should this be {} ? Depends on the call perhaps.
             return {"error": 500}
