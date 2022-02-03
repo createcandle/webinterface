@@ -47,7 +47,7 @@ class WebinterfaceAPIHandler(APIHandler):
         self.addon_name = 'webinterface'
         self.running = True
 
-        self.server = 'http://127.0.0.1:8080'
+        self.api_server = 'http://127.0.0.1:8080'
         self.DEV = True
         self.DEBUG = False
             
