@@ -337,7 +337,7 @@
 			}
 			else{
 				console.log("not ok response while getting data");
-				pre.innerText = body['message'];
+				//pre.innerText = body['message'];
 			}
             
 

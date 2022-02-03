@@ -27,7 +27,7 @@
   "name": "Candle web interface",
   "options": {
     "default": {
-      "Token": "",
+      "Authorization token": "",
       "Web location": "https://www.candlesmarthome.com/web/",
       "Debugging": false
     },
@@ -47,14 +47,14 @@
         }
       },
       "required": [
-        "Token",
+        "Authorization token",
         "Web location"
       ],
       "type": "object"
     }
   },
   "short_name": "webinterface",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "web_accessible_resources": [
     "css/*.css",
     "images/*.svg",

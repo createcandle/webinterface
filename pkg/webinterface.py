@@ -55,7 +55,7 @@ class WebinterfaceAPIHandler(APIHandler):
         self.data_types_lookup_table = {}
         self.token = None
 
-        self.web_url = ""
+        self.web_url = "https://www.candlesmarthome.com/web"
         self.uuid = ""
 
         self.total_time_delta = 0
@@ -213,6 +213,7 @@ class WebinterfaceAPIHandler(APIHandler):
             database = Database(self.addon_name)
             if not database.open():
                 print("Could not open settings database")
+                self.close_proxy()
                 return
             
             config = database.load_config()
@@ -245,10 +246,15 @@ class WebinterfaceAPIHandler(APIHandler):
         # Web url
         try:
             if 'Web location' in config:
-                self.web_url = str(config['Web location'])
-                if not self.web_url.endswith("/"):
-                    self.web_url += "/"
-                print("-Web location is present in the config data.")
+                if len(str(config['Web location'])) > 5:
+                    self.web_url = str(config['Web location'])
+                    if not self.web_url.endswith("/"):
+                        self.web_url += "/"
+                    print("-Web location is present in the config data: " + str(self.web_url))
+                else:
+                    self.web_url = "https://www.candlesmarthome.com/web"
+            else:
+                self.web_url = "https://www.candlesmarthome.com/web"
         except:
             print("Error loading web location from settings")
         
@@ -435,7 +441,8 @@ class WebinterfaceAPIHandler(APIHandler):
 
     # The api request to /things doesn't serve the latest data somehow. This fixes that.
     def update_things(self):
-        print("in update things")
+        if self.DEBUG:
+            print("in update things")
         try:
             
            # do_api_call_for_all_things = True
@@ -496,7 +503,8 @@ class WebinterfaceAPIHandler(APIHandler):
                     
                         if href != "":
                             
-                            print("href = " + str(href))
+                            if self.DEBUG:
+                                print("href = " + str(href))
                             prop_val = self.api_get(href)
                             for key in prop_val:
                                 if key != 'error':
@@ -737,9 +745,11 @@ class WebinterfaceAPIHandler(APIHandler):
                 return json.loads(r.text)
             
         except Exception as ex:
-            print("Error doing " + str(api_path) + " request/loading returned json: " + str(ex))
+            if self.DEBUG:
+                print("Error doing " + str(api_path) + " request/loading returned json: " + str(ex))
             #return [] # or should this be {} ? Depends on the call perhaps.
             return {"error": 500}
+
 
 
     def api_put(self, api_path, json_dict):
@@ -777,7 +787,8 @@ class WebinterfaceAPIHandler(APIHandler):
                 return json.loads(r.text)
 
         except Exception as ex:
-            print("Error doing http request/loading returned json: " + str(ex))
+            if self.DEBUG:
+                print("Error doing http request/loading returned json: " + str(ex))
             #return {"error": "I could not connect to the web things gateway"}
             #return [] # or should this be {} ? Depends on the call perhaps.
             return {"error": 500}
@@ -791,7 +802,8 @@ class WebinterfaceAPIHandler(APIHandler):
 
     def save_persistent_data(self):
         #if self.DEBUG:
-        print("Saving to persistence data store at path: " + str(self.persistence_file_path))
+        if self.DEBUG:
+            print("Saving to persistence data store at path: " + str(self.persistence_file_path))
             
         try:
             if not os.path.isfile(self.persistence_file_path):
@@ -982,7 +994,7 @@ class WebinterfaceProperty(Property):
 
 
     def set_value(self, value):
-        print("set_value is called on a Webinterface property. New value: " + str(value))
+        #print("set_value is called on a Webinterface property. New value: " + str(value))
 
         try:
             if self.name == "outside-access":
@@ -995,7 +1007,7 @@ class WebinterfaceProperty(Property):
         
 
     def update(self, value):
-        print("webinterface property -> update to: " + str(value))
+        #print("webinterface property -> update to: " + str(value))
         #print("--prop details: " + str(self.title) + " - " + str(self.original_property_id))
         #print("--pro device: " + str(self.device))
         if value != self.value:
