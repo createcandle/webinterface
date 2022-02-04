@@ -660,9 +660,9 @@ class WebinterfaceAPIHandler(APIHandler):
                     if self.DEBUG:
                         print('ajax handling save_allowed')
                     try:
-                        if 'state' in request.body:
-                            self.adapter.devices['webinterface'].properties["outside-access"].update(request.body['state'])
-                            self.persistent_data['enabled'] = True
+                        if 'enabled' in request.body:
+                            self.adapter.devices['webinterface'].properties["outside-access"].update(request.body['enabled'])
+                            self.persistent_data['enabled'] = request.body['enabled'];
                             self.save_persistent_data()
                         else:
                             state = False

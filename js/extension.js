@@ -65,12 +65,12 @@
     
     
 		document.getElementById('extension-webinterface-outside-access').addEventListener('change', (event) => {
-            console.log("clicked allow-access button");
-            console.log(event.target.checked);
+            console.log("clicked allow-access button.");
+            console.log("allowed?: ", event.target.checked);
             
             window.API.postJson(
               `/extensions/${this.id}/api/ajax`,
-    					    {'action':'outside_access', 'state':event.target.checked}
+    					    {'action':'outside_access', 'enabled':event.target.checked}
 
             ).then((body) => {
     			console.log("Python API result:");
@@ -263,7 +263,7 @@
                     const thing_list = document.getElementById('extension-webinterface-thing-list');
                     
                     if(body.things.length == 0){
-                        thing_list.innerHTML = "<h3>There are no things to display?</h3><p>Either you have no things, or you haven't granted this addon permission to access your things yet. To give permission, open the Candle app store and visit the settings page of this addon. There you can grant permission.</p>";
+                        thing_list.innerHTML = '<div style="background-color:rgba(0,0,0,.2);padding:2rem"><h3>There are no things to display?</h3><p>Either you have no things, or you have not granted this addon permission to access your things yet. To do so, open the Candle app store and visit the settings page of this addon. There you can grant permission.</p></div>';
                     }
                     else{
                         thing_list.innerHTML = "";
