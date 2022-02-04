@@ -1,3 +1,4 @@
 requests
 aes-everywhere
 passlib
+pycryptodomex
