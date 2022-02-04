@@ -175,13 +175,12 @@ class WebinterfaceAPIHandler(APIHandler):
             #if self.DEBUG:
             #    print("Starting the internal clock")
             if self.token != None:
-                
-                self.update_things() 
+                if len(self.token) > 10:
+                    self.update_things() 
                       
-                t = threading.Thread(target=self.clock)
-                t.daemon = True
-                t.start()
-                #pass
+                    t = threading.Thread(target=self.clock)
+                    t.daemon = True
+                    t.start()
         except:
             print("Error starting the clock thread")
 
