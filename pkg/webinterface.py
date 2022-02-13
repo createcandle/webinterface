@@ -53,7 +53,6 @@ class WebinterfaceAPIHandler(APIHandler):
             
         self.things = [] # Holds all the things, updated via the API. Used to display a nicer thing name instead of the technical internal ID.
         self.data_types_lookup_table = {}
-        self.token = None
 
         self.web_url = "https://www.candlesmarthome.com/web"
         self.uuid = ""
@@ -79,7 +78,7 @@ class WebinterfaceAPIHandler(APIHandler):
         except Exception as ex:
             print("Error loading config: " + str(ex))
 
-        #print("self.token = " + str(self.token))
+        #print("self.persistent_data['token'] = " + str(self.persistent_data['token']))
         
         # Get complete things dictionary via API
         
@@ -133,6 +132,10 @@ class WebinterfaceAPIHandler(APIHandler):
             self.persistent_data['hash'] = None
             self.missing_hash = True
             
+        if 'token' not in self.persistent_data:
+            self.persistent_data['token'] = None
+            
+            
         # Intiate extension addon API handler
         try:
             manifest_fname = os.path.join(
@@ -174,8 +177,8 @@ class WebinterfaceAPIHandler(APIHandler):
         try:      
             #if self.DEBUG:
             #    print("Starting the internal clock")
-            if self.token != None:
-                if len(self.token) > 10:
+            if self.persistent_data['token'] != None:
+                if len(self.persistent_data['token']) > 10:
                     self.update_things() 
                       
                     t = threading.Thread(target=self.clock)
@@ -238,7 +241,7 @@ class WebinterfaceAPIHandler(APIHandler):
         # Api token
         try:
             if 'Authorization token' in config:
-                self.token = str(config['Authorization token'])
+                self.persistent_data['token'] = str(config['Authorization token'])
                 print("-Authorization token is present in the config data.")
         except:
             print("Error loading api token from settings")
@@ -610,6 +613,28 @@ class WebinterfaceAPIHandler(APIHandler):
                       content=json.dumps({'state' : True, 'message' : '', 'web_url': self.web_url, 'persistent_data': persist }),
                     )
                     
+                elif action == 'save_token':
+                    if self.DEBUG:
+                        print('ajax handling save_token')
+                        
+                    #self.persistent_data['password'] = str(request.body['password'])
+                    try:
+                        self.persistent_data['token'] = str(request.body['token'])
+                        
+                    except Exception as ex:
+                        print("Error saving token: " + str(ex))
+                    
+                    #self.persistent_data['hash'] = str(request.body['hash']) # if the browser UI generates the hash, it might improve cmopatibiity, since the same libraries will be used.
+                    self.persistent_data['hash'] = str( hashlib.sha512( bytes(self.persistent_data['password'], 'utf-8') ).hexdigest() )
+                    self.save_persistent_data()
+                    
+                    return APIResponse(
+                      status=200,
+                      content_type='application/json',
+                      content=json.dumps({'state' : True, 'message' : '', 'web_url': self.web_url, 'persistent_data': self.persistent_data }),
+                    )
+                    
+                    
                 elif action == 'save_hash':
                     if self.DEBUG:
                         print('ajax handling save_hash')
@@ -725,8 +750,8 @@ class WebinterfaceAPIHandler(APIHandler):
         if self.DEBUG:
             print("GET PATH = " + str(api_path))
             #print("intent in api_get: " + str(intent))
-        #print("GET TOKEN = " + str(self.token))
-        if self.token == None:
+        #print("GET TOKEN = " + str(self.persistent_data['token']))
+        if self.persistent_data['token'] == None:
             print("API GET: PLEASE ENTER YOUR AUTHORIZATION CODE IN THE SETTINGS PAGE")
             #self.set_status_on_thing("Authorization code missing, check settings")
             return []
@@ -735,7 +760,7 @@ class WebinterfaceAPIHandler(APIHandler):
             r = requests.get(self.api_server + api_path, headers={
                   'Content-Type': 'application/json',
                   'Accept': 'application/json',
-                  'Authorization': 'Bearer ' + str(self.token),
+                  'Authorization': 'Bearer ' + str(self.persistent_data['token']),
                 }, verify=False, timeout=5)
             if self.DEBUG:
                 print("API GET: " + str(r.status_code) + ", " + str(r.reason))
@@ -818,7 +843,7 @@ class WebinterfaceAPIHandler(APIHandler):
         headers = {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'Authorization': 'Bearer {}'.format(self.token),
+            'Authorization': 'Bearer {}'.format(self.persistent_data['token']),
         }
         try:
             r = requests.put(

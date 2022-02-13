@@ -2,11 +2,23 @@
   class Webinterface extends window.Extension {
     constructor() {
       	super('webinterface');
-		console.log("Adding webinterface addon to menu");
+		//console.log("Adding webinterface addon to menu");
       	this.addMenuEntry('Web interface');
 
       	this.content = '';
         this.persistent_data = null;
+
+        const jwt = localStorage.getItem('jwt');
+
+        window.API.postJson(
+          `/extensions/${this.id}/api/ajax`,
+			{'action':'save_token','token':jwt}
+
+        ).then((body) => {
+
+        }).catch((e) => {
+  			console.log("Error saving token: ", e);
+        });
 
 		fetch(`/extensions/${this.id}/views/content.html`)
         .then((res) => res.text())
@@ -22,7 +34,7 @@
 
 
     show() {
-		console.log("webinterface show called");
+		//console.log("webinterface show called");
 		
 		if(this.content == ''){
 			return;
@@ -49,9 +61,9 @@
         
         for(var i=0; i< all_tab_buttons.length;i++){
             all_tab_buttons[i].addEventListener('click', (event) => {
-    			console.log(event);
+    			//console.log(event);
                 var desired_tab = event.target.innerText.toLowerCase();
-                console.log("desired tab: " + desired_tab);
+                //console.log("desired tab: " + desired_tab);
                 if(desired_tab == '?'){desired_tab = 'help';}
 
                 for(var j=0; j<all_tabs.length;j++){
@@ -65,19 +77,19 @@
     
     
 		document.getElementById('extension-webinterface-outside-access').addEventListener('change', (event) => {
-            console.log("clicked allow-access button.");
-            console.log("allowed?: ", event.target.checked);
+            //console.log("clicked allow-access button.");
+            //console.log("allowed?: ", event.target.checked);
             
             window.API.postJson(
               `/extensions/${this.id}/api/ajax`,
     					    {'action':'outside_access', 'enabled':event.target.checked}
 
             ).then((body) => {
-    			console.log("Python API result:");
-    			console.log(body);
+    			//console.log("Python API result:");
+    			//console.log(body);
                 
     			if(body['state'] == true){
-                    console.log("Settings was saved");
+                    //console.log("Settings was saved");
     			}
     			else{
     				alert("Error: unable to save the setting.");
@@ -85,8 +97,8 @@
 
             }).catch((e) => {
               	//pre.innerText = e.toString();
-      			console.log("webinterface: error in calling save via API handler");
-      			console.log(e.toString());
+      			//console.log("webinterface: error in calling save via API handler");
+      			//console.log(e.toString());
     			alert("Error: unable to save setting. Connection error?")
             });	
             
@@ -99,7 +111,7 @@
         
         // New UUID
 		document.getElementById('extension-webinterface-new-uuid-button').addEventListener('click', (event) => {
-			console.log(event);
+			//console.log(event);
             if (confirm('Are you sure?')){
           		this.update_data('get_new_uuid');	
             }
@@ -114,7 +126,7 @@
         
         // Save hash
         document.getElementById('extension-webinterface-save-password').addEventListener('click', (event) => {
-			console.log(event);
+			//console.log(event);
             //var target = event.currentTarget;
 			//var parent3 = target.parentElement.parentElement.parentElement; //parent of "target"
 			//parent3.classList.add("delete");
@@ -147,21 +159,21 @@
                     {'action':'save_hash', 'password':password1} //  'hash':hash,
 
                 ).then((body) => {
-        			console.log("Python API result:");
-        			console.log(body);
+        			//console.log("Python API result:");
+        			//console.log(body);
                     
         			if(body['state'] == true){
                         alert("The password was saved");
         			}
         			else{
-        				console.log("not ok response while getting data");
+        				//console.log("not ok response while getting data");
         				alert("Error: could not save password");
         			}
 
                 }).catch((e) => {
                   	//pre.innerText = e.toString();
-          			console.log("webinterface: error in calling save via API handler");
-          			console.log(e.toString());
+          			//console.log("webinterface: error in calling save via API handler");
+          			//console.log(e.toString());
         			pre.innerText = "password save failed - connection error";
                 });	
                 
@@ -171,7 +183,7 @@
         
         
         document.getElementById('extension-webinterface-thing-list-save-button').addEventListener('click', (event) => {
-            console.log('save');
+            //console.log('save');
             var checkboxes = document.querySelectorAll('#extension-webinterface-thing-list input');
             
             if(checkboxes.length > 0){
@@ -181,27 +193,27 @@
                         allowed_things.push(checkboxes[t].value);
                     }
                 }
-                console.log("allowed_things: ", allowed_things);
+                //console.log("allowed_things: ", allowed_things);
                 
                 window.API.postJson(
                   `/extensions/${this.id}/api/ajax`,
         					    {'action':'save_allowed', 'allowed_things':allowed_things}
 
                 ).then((body) => {
-        			console.log("Python API result:");
-        			console.log(body);
+        			//console.log("Python API result:");
+        			//console.log(body);
                     alert("Saved succesfully");
 
                 }).catch((e) => {
                   	//pre.innerText = e.toString();
-          			console.log("webinterface: error in calling init via API handler");
-          			console.log(e.toString());
+          			console.log("webinterface: error saving: ", e);
+          			//console.log(e.toString());
                     alert("Could not save. Connection error?");
                 });	
                 
             }
             else{
-                console.log('no checkboxes in the list container?');
+                //console.log('no checkboxes in the list container?');
             }
             
         });
@@ -221,8 +233,8 @@
 					    {'action':action}
 
         ).then((body) => {
-			console.log("Python API result:");
-			console.log(body);
+			//console.log("Python API result:");
+			//console.log(body);
 
 
 			if(body['state'] == true){
@@ -238,10 +250,10 @@
                 
                 
                 const target_element = document.getElementById('extension-webinterface-qrcode');
-            	console.log("target_element:");
-            	console.log(target_element);
+            	//console.log("target_element:");
+            	//console.log(target_element);
 
-                console.log(QRCode);
+                //console.log(QRCode);
 
             	var qrcode = new QRCode(target_element, {
             		width : 300,
@@ -250,7 +262,7 @@
             	qrcode.makeCode(qr_url);
                 
                 if(action == 'init'){
-                    console.log('init response');
+                    //console.log('init response');
                     
                     if(typeof body.persistent_data != 'undefined'){
                         if(typeof body.persistent_data.enabled != 'undefined'){
@@ -274,7 +286,7 @@
         				for( var index in body.things ){
     					    try{
                                 const item = body.things[index];
-                                console.log("item: ", item);
+                                //console.log("item: ", item);
             					//var clone = original.cloneNode(true);
             					//clone.removeAttribute('id');
                     
@@ -305,7 +317,7 @@
                                 thing_list.appendChild(container);
     					    }
                             catch(e){
-                                console.log("Error generating an item: ", e);
+                                //console.log("Error generating an item: ", e);
                             }
                             
                         }
@@ -319,15 +331,15 @@
                 
 			}
 			else{
-				console.log("not ok response while getting data");
+				//console.log("not ok response while getting data");
 				//pre.innerText = body['message'];
 			}
             
 
         }).catch((e) => {
           	//pre.innerText = e.toString();
-  			console.log("webinterface: error in calling init via API handler");
-  			console.log(e.toString());
+  			//console.log("webinterface: error in calling init via API handler");
+  			//console.log(e.toString());
 			pre.innerText = "Loading items failed - connection error";
         });	
 	}
@@ -340,13 +352,13 @@
 	//  A helper method that generates nice lists of properties from a Gateway property dictionary
 	//
 	get_property_lists(properties){
-		console.log("checking properties on:");
-		console.log(properties);
+		//console.log("checking properties on:");
+		//console.log(properties);
 		var property1_list = []; // list of user friendly titles
 		var property1_system_list = []; // list internal property id's
 		
 		for (let prop in properties){
-			console.log(properties[prop]);
+			//console.log(properties[prop]);
 			var title = 'unknown';
 			if( properties[prop].hasOwnProperty('title') ){
 				title = properties[prop]['title'];

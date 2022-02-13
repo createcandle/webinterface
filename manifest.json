@@ -38,11 +38,11 @@
           "type": "string"
         },
         "Web location": {
-          "description": "The URL of the online location were you can access the web interface. You can use your own server if you prefer. The default is the Candle webserver: https://www.candlesmarthome.com/webinterface/",
+          "description": "Advanced. The URL of the online location were you can access the web interface. You can run the relay software on your own webserver if you prefer. The default is the Candle webserver: https://www.candlesmarthome.com/web/",
           "type": "string"
         },
         "Debugging": {
-          "description": "Debugging allows you to diagnose any issues with the add-on. If enabled it will result in a lot more debug data in the internal log (which can be found under settings -> developer -> view internal logs).",
+          "description": "Advanced. Debugging allows you to diagnose any issues with the add-on. If enabled it will result in a lot more debug data in the internal log (which can be found under settings -> developer -> view internal logs).",
           "type": "boolean"
         }
       },
@@ -53,7 +53,7 @@
     }
   },
   "short_name": "webinterface",
-  "version": "0.1.4",
+  "version": "0.1.6",
   "web_accessible_resources": [
     "css/*.css",
     "images/*.svg",

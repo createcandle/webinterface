@@ -69,6 +69,10 @@
 /*  VISIT PAGE  */
 
 
+#extension-webinterface-qrcode-container{
+    text-align:center;
+}
+
 #extension-webinterface-qrcode img{
     display:inline-block!important;
 }
