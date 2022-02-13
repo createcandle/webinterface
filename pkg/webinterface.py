@@ -624,14 +624,12 @@ class WebinterfaceAPIHandler(APIHandler):
                     except Exception as ex:
                         print("Error saving token: " + str(ex))
                     
-                    #self.persistent_data['hash'] = str(request.body['hash']) # if the browser UI generates the hash, it might improve cmopatibiity, since the same libraries will be used.
-                    self.persistent_data['hash'] = str( hashlib.sha512( bytes(self.persistent_data['password'], 'utf-8') ).hexdigest() )
                     self.save_persistent_data()
                     
                     return APIResponse(
                       status=200,
                       content_type='application/json',
-                      content=json.dumps({'state' : True, 'message' : '', 'web_url': self.web_url, 'persistent_data': self.persistent_data }),
+                      content=json.dumps({'state' : True, 'message': '', 'web_url': self.web_url, 'persistent_data': self.persistent_data }),
                     )
                     
                     
