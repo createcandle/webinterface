@@ -324,8 +324,14 @@ class WebinterfaceAPIHandler(APIHandler):
                     #print(str(timejson))
                     #print(str(time.time()))
                     if 'time' in timejson:
-                        if self.DEBUG:
-                            print(str(timejson['time']))
+                        #if self.DEBUG:
+                        #    print("gettime.php: timejson['time']: " + str(timejson['time']))
+                            
+                        if timejson['time'] == 0:
+                            #if self.DEBUG:
+                            #    print("the data on the server had a time of 0, indicating it was put there by this controller itself, and not by the web UI. Stopping.")
+                            continue
+                            
                         time_delta = abs( time.time() - ( timejson['time'] ) ) # / 1000
                         self.total_time_delta += time_delta
                         if self.DEBUG:
@@ -336,6 +342,7 @@ class WebinterfaceAPIHandler(APIHandler):
                         #print("self.persistent_data['hash'] = " + str(self.persistent_data['hash']))
                         
                         if time_delta < 15:
+                            print("time delta was smaller than 15 seconds")
                             if 'hash' in timejson:
                                 if self.persistent_data['hash'] == str(timejson['hash']):
                                     #print("hash == hash, and time is ok too.")
@@ -349,14 +356,14 @@ class WebinterfaceAPIHandler(APIHandler):
                                     # First, check if there are any actions that need to be performed buffered on the server.
                                     try:
                                         a = requests.post(self.web_url + 'get_actions.php', data={"hash":self.persistent_data['hash'], "uuid":self.persistent_data['uuid'] })
-                                        if self.DEBUG:
-                                            print("actions data: " + str(a.content))
+                                        #if self.DEBUG:
+                                        print("actions data: " + str(a.content))
                                             
                                         if len(str(a.content)) > 5:
                                             
                                             messages = a.json()
-                                            if self.DEBUG:
-                                                print(str("message json: " + str(messages))) 
+                                            #if self.DEBUG:
+                                            print(str("incoming actions messages data: " + str(messages))) 
                                             #print(aes256.decrypt(encrypted, self.persistent_data['hash']))
                                             for message in messages:
                                                 if 'encrypted' in message:
@@ -382,6 +389,9 @@ class WebinterfaceAPIHandler(APIHandler):
                                                     data_to_put = { str(prop_id) : action['value'] }
                                                     #print("data_to_put = " + str(data_to_put))
                                                     api_put_result = self.api_put( action['url'], data_to_put )
+                                                else:
+                                                    if self.DEBUG:
+                                                        print("Warning: incoming action data did not contain encrypted actions list. No actions to perform yet.")
                                                     
                                     except Exception as ex:
                                         print("Error getting or handling latest action messages: " + str(ex))
@@ -393,8 +403,8 @@ class WebinterfaceAPIHandler(APIHandler):
                                     time.sleep(.1)
                                     if self.total_time_delta > 5:
                                         self.total_time_delta = 0
-                                        if self.DEBUG:
-                                            print("Password ok, and some time has passed. Posting to web")
+                                        #if self.DEBUG:
+                                        print("Password ok, and some time has passed. Posting update of all things to web")
 
                                         #print("")
                                         #print("__THINGS__")
@@ -405,8 +415,8 @@ class WebinterfaceAPIHandler(APIHandler):
                                         #print("")
                                         
                                         things_string = json.dumps(self.things_to_send)
-                                        if self.DEBUG:
-                                            print("sending: " + str(things_string))
+                                        #if self.DEBUG:
+                                        #    print("sending: " + str(things_string))
                                         #encrypted_string = aes256.encrypt(things_string, keyring.get_password('webinterface', webinterface))
                                         encrypted_string = aes256.encrypt(things_string, self.persistent_data['password'])
                                         #encoded_string = encrypted_string.decode('utf-8')
@@ -432,8 +442,9 @@ class WebinterfaceAPIHandler(APIHandler):
                     
                         # if time_delta > 15 seconds
                         else:
+                            print("Error: time delta was larger than 15 seconds. It was: " + str(time_delta))
                             r = requests.post(self.web_url + 'receiver.php', data={"hash":self.persistent_data['hash'], "time":0 }) # ask the server to delete all the data (which it does by itself already too)
-                 
+                
                 else:
                     if self.previous_enabled_state == True:
                         # Delete all data on the webserver.
@@ -448,14 +459,14 @@ class WebinterfaceAPIHandler(APIHandler):
 
     # The api request to /things doesn't serve the latest data somehow. This fixes that.
     def update_things(self):
-        if self.DEBUG:
-            print("in update things")
+        #if self.DEBUG:
+        #    print("in update things")
         try:
             
            # do_api_call_for_all_things = True
             if self.should_get_all_things_from_api:
-                if self.DEBUG:
-                    print("update all the things")
+                #if self.DEBUG:
+                #    print("update all the things")
                 api_response = self.api_get("/things")
             
                 if 'error' in api_response:
@@ -481,6 +492,7 @@ class WebinterfaceAPIHandler(APIHandler):
 
             for thing in self.things:
                 thing_counter += 1 
+                
                 try:
                     thing_name = thing['href'].rsplit('/', 1)[-1]
                     #print("thing: " + str(thing))
@@ -493,40 +505,61 @@ class WebinterfaceAPIHandler(APIHandler):
                         continue
                 else:
                     continue
+                    
+                full_thing = self.api_get(thing['href'])                
+                print("\n\n" + str(full_thing))
                 
                 for prop in thing['properties']:
                     try:
                         href = ""
                         
-                        if len(thing['properties'][prop]['links']) != 0:
-                            for i in range(len(thing['properties'][prop]['links'])):
-                                if thing['properties'][prop]['links'][i]['rel'] == 'property':
-                                    href = thing['properties'][prop]['links'][i]['href']
-                                    
-                        elif 'forms' in thing['properties'][prop]:
-                            for i in range(len(thing['properties'][prop]['forms'])):
-                                if thing['properties'][prop]['forms'][i]['rel'] == 'property':
-                                    href = thing['properties'][prop]['forms'][i]['href']
+                        if self.DEBUG:
+                            pass
+                        print("property: " + str(thing['properties'][prop]))
+                        
+                        if 'value' in thing['properties'][prop]:
+                            print("value was already present in this property. It was: " + str(thing['properties'][prop]['value']))
+                            
+                        using_forms = False       
+                        if 'forms' in thing['properties'][prop]:
+                            if len(thing['properties'][prop]['forms']) != 0:
+                                using_forms = True
+                                for i in range(len(thing['properties'][prop]['forms'])):
+                                    if thing['properties'][prop]['forms'][i]['rel'] == 'property':
+                                        href = thing['properties'][prop]['forms'][i]['href']
+                            
+                        
+                        if using_forms == False:   
+                            if 'links' in thing['properties'][prop]:
+                                if len(thing['properties'][prop]['links']) != 0:
+                                    using_links = True
+                                    for i in range(len(thing['properties'][prop]['links'])):
+                                        if thing['properties'][prop]['links'][i]['rel'] == 'property':
+                                            href = thing['properties'][prop]['links'][i]['href']
+                    
                     
                         if href != "":
                             
-                            if self.DEBUG:
-                                print("href = " + str(href))
+                            #if self.DEBUG:
+                            #    print("href = " + str(href))
                             prop_val = self.api_get(href)
+                            print("prop_val: " + str(prop_val))
                             for key in prop_val:
                                 if key != 'error':
                                     
-                                    if 'value' in self.things[thing_counter]['properties'][prop]:
+                                    self.things[thing_counter]['properties'][prop]['value'] = prop_val[key]
+                                    
+                                    #if 'value' in self.things[thing_counter]['properties'][prop]:
                                         #print("old val: " + str( self.things[thing_counter]['properties'][prop]['value'] ))
-                                        self.things[thing_counter]['properties'][prop]['value'] = prop_val[key] #['links'][i]['href']
+                                    #    self.things[thing_counter]['properties'][prop]['value'] = prop_val[key] #['links'][i]['href']
                                         #print("updated val: " + str( self.things[thing_counter]['properties'][prop]['value'] ))
-                                    else:
-                                        pass
+                                    #else:
+                                    #    pass
                                         #print("the property didn't have a value?")
                                         #print(str( self.things[thing_counter]['properties'][prop] ))
                                     
                                 else:
-                                    #print("-- api gave error --")
+                                    print("-- api property query returned error: " + str(prop_val))
                                     pass
                         
                     except Exception as ex:
@@ -552,7 +585,8 @@ class WebinterfaceAPIHandler(APIHandler):
                     if 'allowed_things' in self.persistent_data:
                         if thing_name in self.persistent_data['allowed_things']:
                             # TODO maybe implement a system that checks if things have changed since last time, and only send those.
-                            print("allowed thing: " + str(thing_name))
+                            if self.DEBUG:
+                                print("allowed thing: " + str(thing_name))
                             to_send.append(thing)
                 
                 except Exception as ex:
@@ -745,8 +779,8 @@ class WebinterfaceAPIHandler(APIHandler):
 
     def api_get(self, api_path,intent='default'):
         """Returns data from the WebThings Gateway API."""
-        if self.DEBUG:
-            print("GET PATH = " + str(api_path))
+        #if self.DEBUG:
+        #    print("GET PATH = " + str(api_path))
             #print("intent in api_get: " + str(intent))
         #print("GET TOKEN = " + str(self.persistent_data['token']))
         if self.persistent_data['token'] == None:
@@ -760,40 +794,40 @@ class WebinterfaceAPIHandler(APIHandler):
                   'Accept': 'application/json',
                   'Authorization': 'Bearer ' + str(self.persistent_data['token']),
                 }, verify=False, timeout=5)
-            if self.DEBUG:
-                print("API GET: " + str(r.status_code) + ", " + str(r.reason))
+            #if self.DEBUG:
+            #    print("API GET: " + str(r.status_code) + ", " + str(r.reason))
 
             if r.status_code != 200:
-                if self.DEBUG:
-                    print("API returned a status code that was not 200. It was: " + str(r.status_code))
+                #if self.DEBUG:
+                #    print("API returned a status code that was not 200. It was: " + str(r.status_code))
                 return {"error": str(r.status_code)}
                 
             else:
                 to_return = r.text
                 try:
-                    if self.DEBUG:
-                        print("api_get: received: " + str(r))
+                    #if self.DEBUG:
+                    #    print("api_get: received: " + str(r))
                     #for prop_name in r:
                     #    print(" -> " + str(prop_name))
                     if not '{' in r.text:
-                        if self.DEBUG:
-                            print("api_get: response was not json (gateway 1.1.0 does that). Turning into json...")
+                        #if self.DEBUG:
+                        #    print("api_get: response was not json (gateway 1.1.0 does that). Turning into json...")
                         
                         if 'things/' in api_path and '/properties/' in api_path:
-                            if self.DEBUG:
-                                print("properties was in api path: " + str(api_path))
+                            #if self.DEBUG:
+                            #    print("properties was in api path: " + str(api_path))
                             likely_property_name = api_path.rsplit('/', 1)[-1]
                             to_return = {}
                             to_return[ likely_property_name ] = json.loads(r.text)
-                            if self.DEBUG:
-                                print("returning fixed: " + str(to_return))
+                            #if self.DEBUG:
+                            #    print("returning fixed: " + str(to_return))
                             return to_return
                                 
                 except Exception as ex:
                     print("api_get_fix error: " + str(ex))
                         
-                if self.DEBUG:
-                    print("returning without 1.1.0 fix")
+                #if self.DEBUG:
+                #    print("returning without 1.1.0 fix: " + str(r.text))
                 return json.loads(r.text)
             
         except Exception as ex:
