@@ -20,6 +20,13 @@
     margin:1rem;
 }
 
+
+
+.kiosk #extension-webinterface-web-url-button{
+    display:none;
+}
+
+
 /*  TABS  */
 
 #extension-webinterface-tab-buttons{

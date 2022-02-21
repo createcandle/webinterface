@@ -27,7 +27,7 @@ var QRCode;
 	//
 	//---------------------------------------------------------------------
 	function QR8bitByte(data) {
-		console.log(data);
+		//console.log(data);
 		this.mode = QRMode.MODE_8BIT_BYTE;
 		this.data = data;
 		this.parsedData = [];

@@ -342,7 +342,8 @@ class WebinterfaceAPIHandler(APIHandler):
                         #print("self.persistent_data['hash'] = " + str(self.persistent_data['hash']))
                         
                         if time_delta < 15:
-                            print("time delta was smaller than 15 seconds")
+                            if self.DEBUG:
+                                print("time delta was smaller than 15 seconds")
                             if 'hash' in timejson:
                                 if self.persistent_data['hash'] == str(timejson['hash']):
                                     #print("hash == hash, and time is ok too.")
@@ -357,13 +358,15 @@ class WebinterfaceAPIHandler(APIHandler):
                                     try:
                                         a = requests.post(self.web_url + 'get_actions.php', data={"hash":self.persistent_data['hash'], "uuid":self.persistent_data['uuid'] })
                                         #if self.DEBUG:
-                                        print("actions data: " + str(a.content))
+                                        if self.DEBUG:
+                                            print("actions data: " + str(a.content))
                                             
                                         if len(str(a.content)) > 5:
                                             
                                             messages = a.json()
                                             #if self.DEBUG:
-                                            print(str("incoming actions messages data: " + str(messages))) 
+                                            if self.DEBUG:
+                                                print(str("incoming actions messages data: " + str(messages))) 
                                             #print(aes256.decrypt(encrypted, self.persistent_data['hash']))
                                             for message in messages:
                                                 if 'encrypted' in message:
@@ -404,7 +407,8 @@ class WebinterfaceAPIHandler(APIHandler):
                                     if self.total_time_delta > 5:
                                         self.total_time_delta = 0
                                         #if self.DEBUG:
-                                        print("Password ok, and some time has passed. Posting update of all things to web")
+                                        if self.DEBUG:
+                                            print("Password ok, and some time has passed. Posting update of all things to web")
 
                                         #print("")
                                         #print("__THINGS__")
@@ -442,7 +446,8 @@ class WebinterfaceAPIHandler(APIHandler):
                     
                         # if time_delta > 15 seconds
                         else:
-                            print("Error: time delta was larger than 15 seconds. It was: " + str(time_delta))
+                            #if self.DEBUG:
+                            #    print("Error: time delta was larger than 15 seconds. It was: " + str(time_delta))
                             r = requests.post(self.web_url + 'receiver.php', data={"hash":self.persistent_data['hash'], "time":0 }) # ask the server to delete all the data (which it does by itself already too)
                 
                 else:
@@ -507,18 +512,18 @@ class WebinterfaceAPIHandler(APIHandler):
                     continue
                     
                 full_thing = self.api_get(thing['href'])                
-                print("\n\n" + str(full_thing))
+                #print("\n\n" + str(full_thing))
                 
                 for prop in thing['properties']:
                     try:
                         href = ""
                         
                         if self.DEBUG:
-                            pass
-                        print("property: " + str(thing['properties'][prop]))
+                            print("property: " + str(thing['properties'][prop]))
                         
                         if 'value' in thing['properties'][prop]:
-                            print("value was already present in this property. It was: " + str(thing['properties'][prop]['value']))
+                            if self.DEBUG:
+                                print("value was already present in this property. It was: " + str(thing['properties'][prop]['value']))
                             
                         using_forms = False       
                         if 'forms' in thing['properties'][prop]:
@@ -543,7 +548,8 @@ class WebinterfaceAPIHandler(APIHandler):
                             #if self.DEBUG:
                             #    print("href = " + str(href))
                             prop_val = self.api_get(href)
-                            print("prop_val: " + str(prop_val))
+                            if self.DEBUG:
+                                print("prop_val: " + str(prop_val))
                             for key in prop_val:
                                 if key != 'error':
                                     
@@ -559,7 +565,8 @@ class WebinterfaceAPIHandler(APIHandler):
                                         #print(str( self.things[thing_counter]['properties'][prop] ))
                                     
                                 else:
-                                    print("-- api property query returned error: " + str(prop_val))
+                                    if self.DEBUG:
+                                        print("-- api property query returned error: " + str(prop_val))
                                     pass
                         
                     except Exception as ex:
@@ -621,7 +628,8 @@ class WebinterfaceAPIHandler(APIHandler):
             if request.path == '/ajax':
                 
                 action = str(request.body['action'])    
-                print("ajax action = " + str(action))
+                if self.DEBUG:
+                    print("ajax action = " + str(action))
                 
                 #persist = self.persistent_data.copy()
                 #del persist['password']
