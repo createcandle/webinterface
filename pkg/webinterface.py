@@ -51,6 +51,8 @@ class WebinterfaceAPIHandler(APIHandler):
         self.DEV = True
         self.DEBUG = False
             
+        self.poll_interval = 5
+        
         self.things = [] # Holds all the things, updated via the API. Used to display a nicer thing name instead of the technical internal ID.
         self.data_types_lookup_table = {}
 
@@ -125,7 +127,7 @@ class WebinterfaceAPIHandler(APIHandler):
             self.get_new_uuid()
             
         if 'enabled' not in self.persistent_data:
-            self.persistent_data['enabled'] = True
+            self.persistent_data['enabled'] = False
             self.save_persistent_data()
             
         if 'hash' not in self.persistent_data:
@@ -143,11 +145,11 @@ class WebinterfaceAPIHandler(APIHandler):
                 '..',
                 'manifest.json'
             )
-            print(str(manifest_fname))
+            #print(str(manifest_fname))
             with open(manifest_fname, 'rt') as f:
                 manifest = json.load(f)
 
-            print("manifest['id'] = " + str(manifest['id']))
+            #print("manifest['id'] = " + str(manifest['id']))
 
             APIHandler.__init__(self, manifest['id'])
             self.manager_proxy.add_api_handler(self)
@@ -164,7 +166,8 @@ class WebinterfaceAPIHandler(APIHandler):
         try:
             self.adapter = WebinterfaceAdapter(self,verbose=False)
             #self.manager_proxy.add_api_handler(self.extension)
-            print("ADAPTER created")
+            if self.DEBUG:
+                print("WebInterface adapter created")
             pass
         except Exception as ex:
             print("Failed to start ADAPTER. Error: " + str(ex))
@@ -214,14 +217,14 @@ class WebinterfaceAPIHandler(APIHandler):
         try:
             database = Database(self.addon_name)
             if not database.open():
-                print("Could not open settings database")
+                print("Error, could not open settings database")
                 self.close_proxy()
                 return
             
             config = database.load_config()
             
             if config:
-                print("config loaded")
+                #print("config loaded")
                 if 'Anonymous ID' in config:
                     if str(config['Anonymous ID']) == "" and str(self.persistent_data['uuid']) != "":
                         config['Anonymous ID'] = str(self.persistent_data['uuid'])
@@ -238,13 +241,24 @@ class WebinterfaceAPIHandler(APIHandler):
             print("Error loading config from database")
             return
         
+        
+        # Debugging
+        if 'Debugging' in config:
+            self.DEBUG = bool(config['Debugging'])
+            if self.DEBUG:
+                print("-Debugging preference was in config: " + str(self.DEBUG))
+        
         # Api token
         try:
             if 'Authorization token' in config:
-                self.persistent_data['token'] = str(config['Authorization token'])
-                print("-Authorization token is present in the config data.")
+                token = str(config['Authorization token'])
+                if len(token) > 20:
+                    self.persistent_data['token'] = str(config['Authorization token'])
+                    if self.DEBUG:
+                        print("-Authorization token was present in the config data.")
         except:
-            print("Error loading api token from settings")
+            if self.DEBUG:
+                print("Error loading api token from settings")
         
         # Web url
         try:
@@ -253,19 +267,12 @@ class WebinterfaceAPIHandler(APIHandler):
                     self.web_url = str(config['Web location'])
                     if not self.web_url.endswith("/"):
                         self.web_url += "/"
-                    print("-Web location is present in the config data: " + str(self.web_url))
-                else:
-                    self.web_url = "https://www.candlesmarthome.com/web"
-            else:
-                self.web_url = "https://www.candlesmarthome.com/web"
+                    if self.DEBUG:
+                        print("-Web location was present in the config data: " + str(self.web_url))
         except:
             print("Error loading web location from settings")
         
-        # Debugging
-        if 'Debugging' in config:
-            self.DEBUG = bool(config['Debugging'])
-            if self.DEBUG:
-                print("-Debugging preference was in config: " + str(self.DEBUG))
+        
 
 
 
@@ -284,7 +291,7 @@ class WebinterfaceAPIHandler(APIHandler):
             time.sleep(1)
             #print(".")
             seconds_counter += 1
-            if seconds_counter >= 5:
+            if seconds_counter >= self.poll_interval:
                 seconds_counter = 0
             try:
                 
