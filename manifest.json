@@ -34,7 +34,7 @@
     "schema": {
       "properties": {
         "Authorization token": {
-          "description": "To be allowed to get information on all your devices, you have to create an 'authorization' code. It's basically a very long password. You can generate it yourself under Settings -> Developer -> Create local authorization",
+          "description": "Advanced. An authorization token allows this addon to access your things. The addon normally handles this automatically, but you can create a custom one and enter it here if you prefer.",
           "type": "string"
         },
         "Web location": {
@@ -46,14 +46,12 @@
           "type": "boolean"
         }
       },
-      "required": [
-        "Web location"
-      ],
+      "required": [],
       "type": "object"
     }
   },
   "short_name": "webinterface",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "web_accessible_resources": [
     "css/*.css",
     "images/*.svg",
