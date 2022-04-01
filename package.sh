@@ -21,6 +21,9 @@ mkdir -p lib package
 # Pull down Python dependencies
 pip3 install -r requirements.txt -t lib --no-binary :all: --prefix ""
 
+# Remove local cffi version to avoid mismatch with already installed version on raspbian
+rm -rf ./lib/cffi*
+
 # Put package together
 cp -r lib pkg LICENSE manifest.json *.py README.md css images js views package/
 find package -type f -name '*.pyc' -delete
