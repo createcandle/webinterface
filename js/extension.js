@@ -124,7 +124,7 @@
         });
         
         
-        // Save hash
+        // Save password
         document.getElementById('extension-webinterface-save-password').addEventListener('click', (event) => {
 			//console.log(event);
             //var target = event.currentTarget;
@@ -139,15 +139,16 @@
                 return
             }
             
+            if(password1.startsWith('12345')){
+                alert("Oh come one, that's not secure");
+                return
+            }
+            
             if(password1.length < 8){
                 alert("The passwords needs to be at least 8 characters long");
                 return
             }
             
-            if(password1.startsWith('12345')){
-                alert("Oh come one, that's not secure");
-                return
-            }
             
             if (confirm('Are you sure you want to change the password?')){
           		
@@ -217,6 +218,79 @@
             }
             
         });
+        
+        
+        
+        //
+        //  MATRIX
+        //
+        document.getElementById('extension-webinterface-matrix-create-account-button').addEventListener('click', (event) => {
+            console.log("create matrix account button clicked");
+            
+            const server = document.getElementById('extension-webinterface-matrix-server').value;
+            const username = document.getElementById('extension-webinterface-matrix-username').value;
+            const password1 = document.getElementById('extension-webinterface-matrix-password1').value;
+            const password2 = document.getElementById('extension-webinterface-matrix-password2').value;
+            
+            
+            if(password1 != password2){
+                alert("The passwords did not match");
+                return
+            }
+            
+            if(password1.startsWith('12345')){
+                alert("Oh come one, that's not secure");
+                return
+            }
+            
+            if(password1.length < 8){
+                alert("The passwords needs to be at least 8 characters long");
+                return
+            }
+            
+            
+            console.log("server: ", server);
+            console.log("username: ", username);
+            console.log("password: ", password1);
+            
+            window.API.postJson(
+              `/extensions/${this.id}/api/ajax`,
+                {'action':'create_matrix_account', 
+                'matrix_server':server,
+                'matrix_username',username,
+                'matrix_password':password1}
+
+            ).then((body) => {
+    			console.log("Python API create matrix account result: ", body);
+                
+    			if(body['state'] == true){
+                    alert("The account was created succesfully");
+    			}
+    			else{
+    				//console.log("not ok response while getting data");
+    				alert("Error creating new Matrix account");
+    			}
+
+            }).catch((e) => {
+              	//pre.innerText = e.toString();
+      			//console.log("webinterface: error in calling save via API handler");
+      			//console.log(e.toString());
+                console.log('error connecting while trying to create Matrix account: ', e);
+                alert("creating Matrix account failed - connection error");
+    			//pre.innerText = "creating Matrix account failed - connection error";
+            });	
+            
+            
+            
+            
+            
+        });
+        
+        
+        
+        
+        
+        
         
         this.update_data('init');
 

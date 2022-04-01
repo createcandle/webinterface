@@ -85,11 +85,11 @@
 }
 
 
-#extension-webinterface-two-column{
+.extension-webinterface-two-column{
     display:flex;
     flex-wrap:wrap;
 }
-#extension-webinterface-two-column > div{
+.extension-webinterface-two-column > div{
     width: calc(50% - 6rem);
     min-width: 200px;
     padding: 2rem;
@@ -99,7 +99,7 @@
     flex-grow: 1;
 }
 
-#extension-webinterface-two-column button{
+.extension-webinterface-two-column button{
     margin-top:1rem;
 }
 

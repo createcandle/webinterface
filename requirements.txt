@@ -2,3 +2,5 @@ requests
 aes-everywhere
 passlib
 pycryptodomex
+python-olm
+matrix-nio[e2e]

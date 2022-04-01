@@ -7,6 +7,7 @@
             <button id="extension-webinterface-tab-button-access" class="extension-webinterface-main-tab-button extension-webinterface-tab-selected">Access</button>
     		<button id="extension-webinterface-tab-button-account" class="extension-webinterface-main-tab-button">Account</button>
             <button id="extension-webinterface-tab-button-things" class="extension-webinterface-main-tab-button">Things</button>
+            <button id="extension-webinterface-tab-button-notifications" class="extension-webinterface-main-tab-button">Notifications</button>
             <button id="extension-webinterface-tab-button-help" class="extension-webinterface-main-tab-button">?</button>
         </div>
             
@@ -39,7 +40,7 @@
             
             <div id="extension-webinterface-tab-account" class="extension-webinterface-vlak extension-webinterface-tab extension-webinterface-hidden">
                 <p style="text-align:center">To use your web interface you will need an anonymous ID and a password.<br/><br/></p>
-                <div id="extension-webinterface-two-column">
+                <div class="extension-webinterface-two-column">
                     <div>
                         <h3>Anonymous ID</h3>
                         <p>This is your unique code. Unlike an email address or username, it does not reveal anything meaningful about you.</p>
@@ -68,10 +69,49 @@
                 
             </div>
             
+            
+            <div id="extension-webinterface-tab-notifications" class="extension-webinterface-vlak extension-webinterface-tab extension-webinterface-hidden">
+                
+                <div id="extension-webinterface-matrix-create-account-container">
+                    <div class="extension-webinterface-two-column">
+                        <div>
+                            <p>You can receive notifications on your mobile devices through an encrypted chat network called Matrix. This is very similar to Whatsapp or Signal. To use it you'll have to intall the Elements app on your phone, and create a Matrix account.</p>
+                            <p style="text-align:center">To use notifications you will need a Matrix account.<br/><br/></p>
+                        </div>
+                        <div>
+                            <h3>Choose a server</h3>
+                            <p>Matrix is a "federated" network. This means no single organisation owns the chat network. Anyone can create a server, and then these servers route the messages between them so they get to the intented destination. You could even run your own server if you wanted, which would give you very high levels of control over your data.</p>
+                            <p>Here is a list of popular and/or privacy protecting servers. Select which server you'd like to call home. You can also provide a different server in this addon's settings, if you prefer.</p>
+                            <select id="extension-webinterface-matrix-server">
+                                <option value="matrix.privacytools.io" selected>matrix.privacytools.io</option>
+                                <option value="nerdsin.space">Nerdsin.space</option>
+                            </select>
+                        
+                            <h3>Username</h3>
+                            <p>Choose a unique username. You could use your email address, for example.</p>
+                            <input id="extension-webinterface-matrix-username"/><br/>
+                        
+                            <h3>Password</h3>
+                            <p>The password is stored on your controller, and is never transmitted to the outside world.</p>
+                            <input id="extension-webinterface-matrix-password1" type="password" placeholder="Password"/><br/>
+                    
+                            <p style="font-size:70%; margin-bottom:.1rem">Repeat your password:</p>
+                            <input id="extension-webinterface-matrix-password2" type="password" placeholder="Password"/>
+                            <br/>
+                            <button id="extension-webinterface-matrix-create-account-button" type="button">Create account</button>
+                        
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+            
+            
+            
             <div id="extension-webinterface-tab-help" class="extension-webinterface-vlak extension-webinterface-tab extension-webinterface-hidden">
                 
                 <h2>About the Web Interface</h2>
-                <p>Sometimes it can be useful to access your smart home from outside the home. The WebInterface makes this possible.</p>
+                <p>Sometimes it can be useful to connect with your smart home from outside the home. The WebInterface makes this possible.</p>
                 <p>Importantly, you can choose when outside access is allowed, and which devices may be controlled.</p>
                 <h3>How it works</h3>
                 <p>Data between your home and your mobile browser is passed along by a relay server. It passes the messages along. It doesn't know who they belong to, and because the messages are encrypted it doesn't know what is in them.</p>
