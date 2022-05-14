@@ -57,4 +57,4 @@ Now you can visit the webserver. Enter the password, and within about 10 seconds
 ## Thanks to
 
 This addon was made possible with support from the Dutch SIDN fund.
-http://sidnfonds.nl/en
+https://sidnfonds.nl
