@@ -24,7 +24,7 @@
   "id": "webinterface",
   "license": "MPL-2.0",
   "manifest_version": 1,
-  "name": "Candle web interface",
+  "name": "Web interface",
   "options": {
     "default": {
       "Authorization token": "",
@@ -51,7 +51,7 @@
     }
   },
   "short_name": "webinterface",
-  "version": "0.1.12",
+  "version": "0.1.11",
   "web_accessible_resources": [
     "css/*.css",
     "images/*.svg",

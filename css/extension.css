@@ -35,6 +35,8 @@
     border-radius: 0.7rem;
     overflow: hidden;
     border-radius:.5rem;
+    max-width: 76rem;
+    margin: 4rem auto 0 auto;
 }
 #extension-webinterface-view #extension-webinterface-tab-buttons button{
     background-color: transparent;
@@ -76,6 +78,15 @@
 /*  VISIT PAGE  */
 
 
+.extension-webinterface-tip{
+    padding:1rem 2rem;
+    background-color:#bf7b00;
+    display:none;
+    border-radius:.5rem;
+    margin:2rem;
+}
+
+
 #extension-webinterface-qrcode-container{
     text-align:center;
 }
@@ -85,11 +96,11 @@
 }
 
 
-.extension-webinterface-two-column{
+#extension-webinterface-two-column{
     display:flex;
     flex-wrap:wrap;
 }
-.extension-webinterface-two-column > div{
+#extension-webinterface-two-column > div{
     width: calc(50% - 6rem);
     min-width: 200px;
     padding: 2rem;
@@ -99,7 +110,7 @@
     flex-grow: 1;
 }
 
-.extension-webinterface-two-column button{
+#extension-webinterface-two-column button{
     margin-top:1rem;
 }
 
@@ -314,7 +325,11 @@
 
 @media screen and (max-width: 640px) {
     #extension-webinterface-view #extension-webinterface-tab-buttons button{
-        font-size:1.6rem;
+        padding:1rem;
+    }
+    .extension-webinterface-vlak{
+        margin-left:0;
+        margin-right:0;
     }
 }
 

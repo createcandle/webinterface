@@ -9,11 +9,9 @@ import time
 from time import sleep
 import uuid
 import base64
-#import socket
-import asyncio
-import hashlib
 import requests
 #from passlib.hash import pbkdf2_sha512
+import hashlib
 import threading
 from AesEverywhere import aes256
 #import secretstorage
@@ -25,10 +23,6 @@ except:
     print("Import APIHandler and APIResponse from gateway_addon failed. Use at least WebThings Gateway version 0.10")
     sys.exit(1)
 
-try:
-    from nio import AsyncClient, AsyncClientConfig, LoginResponse, MatrixRoom, RoomMessageText
-except:
-    print("ERROR, could not load Matrix library")
 
 
 _TIMEOUT = 3
@@ -78,15 +72,6 @@ class WebinterfaceAPIHandler(APIHandler):
             
         self.should_get_all_things_from_api = True # whenever this is set to true, the complete things list is requested from the API. This is a heavy call.
             
-            
-        # MATRIX
-        self.matrix_config = AsyncClientConfig(
-                max_limit_exceeded=0,
-                max_timeouts=0,
-                store_sync_tokens=True,
-                encryption_enabled=True,
-            )
-            
         #print(self.user_profile)
             
         # LOAD CONFIG
@@ -101,14 +86,12 @@ class WebinterfaceAPIHandler(APIHandler):
         
         
         
-        self.matrix_data_store_path = '/home/pi/.webthings/data/webinterface/matrix.json'
         
         # Paths
         # Get persistent data
         try:
             #print("self.user_profile['dataDir'] = " + str(self.user_profile))
             self.persistence_file_path = os.path.join(self.user_profile['dataDir'], self.addon_name, 'persistence.json')
-            self.matrix_data_store_path = os.path.join(self.user_profile['dataDir'], self.addon_name, 'matrix.json')
         except:
             try:
                 if self.DEBUG:
@@ -121,10 +104,6 @@ class WebinterfaceAPIHandler(APIHandler):
         
         if self.DEBUG:
             print("Current working directory: " + str(os.getcwd()))
-        
-        
-        
-        
         
         
         first_run = False
@@ -158,15 +137,12 @@ class WebinterfaceAPIHandler(APIHandler):
         if 'token' not in self.persistent_data:
             self.persistent_data['token'] = None
             
-        if 'matrix_device_id' not in self.persistent_data:
-            self.persistent_data['matrix_device_id'] = "Candle controller"# + self.get_new_uuid()
+        if 'allowed_things' not in self.persistent_data:
+            self.persistent_data['allowed_things'] = []
+        
+        if 'hash' not in self.persistent_data:
+            self.persistent_data['hash'] = ""
             
-        if 'matrix_room_id' not in self.persistent_data:
-            room_code = self.get_new_uuid()
-            self.persistent_data['matrix_room_id'] = "candle_" + room_code[:6]
-            
-        if self.DEBUG:
-            print("matrix room id: " + str(self.persistent_data['matrix_room_id']))
             
         # Intiate extension addon API handler
         try:
@@ -542,11 +518,10 @@ class WebinterfaceAPIHandler(APIHandler):
                 except Exception as ex:
                     print("update things: no thing name?" + str(ex))
                 
-                if 'allowed_things' in self.persistent_data:
-                    if thing_name not in self.persistent_data['allowed_things']:
-                        continue
-                else:
+                
+                if thing_name not in self.persistent_data['allowed_things']:
                     continue
+                
                     
                 full_thing = self.api_get(thing['href'])                
                 #print("\n\n" + str(full_thing))
@@ -643,90 +618,6 @@ class WebinterfaceAPIHandler(APIHandler):
 
 
 
-    async def matrix_message_callback(self, room, event):
-        if room != None and event != None:
-            print(
-                f"Message received in room {room.display_name}\n"
-                f"{room.user_name(event.sender)} | {event.body}"
-            )
-        else:
-            print("message callback error: missing room or event")
-
-
-    async def matrix_main(self):
-        if 'matrix_server' in self.persistent_data and 'matrix_token' in self.persistent_data:
-            user_id = self.persistent_data['matrix_username'] + ":" + self.persistent_data['matrix_server']
-            self.matrix_client = AsyncClient("https://" + self.persistent_data['matrix_server'], user_id, store_path=self.matrix_data_store_path, config=self.matrix_config)
-            client.access_token = self.persistent_data['matrix_token']
-            #client.user_id = user_id
-            client.device_id = self.persistent_data['matrix_device_id']
-            
-            self.matrix_client.add_event_callback(self.matrix_message_callback, RoomMessageText)
-            if self.DEBUG:
-                print("main matrix client created")
-        
-                
-            if (isinstance(resp, LoginResponse)):
-                print("")
-                
-            #print("logging in to Matrix")
-            #print(await self.matrix_client.login( self.persistent_data['matrix_password'] ))
-            # "Logged in as @alice:example.org device id: RANDOMDID"
-
-            # If you made a new room and haven't joined as that user, you can use
-            # await client.join("your-room-id")
-
-            await self.matrix_client.room_send(
-                # Watch out! If you join an old room you'll see lots of old messages
-                room_id=self.persistent_data['matrix_room_id'],
-                message_type="m.room.message",
-                content = {
-                    "msgtype": "m.text",
-                    "body": "Hello world!"
-                }
-            )
-            #if self.account_created == False:
-
-            await client.sync_forever(timeout=30000) # milliseconds
-
-                
-              
-        else:
-            print("matrix main: missing server or token")  
-
-        
-
-    
-    def start_matrix(self):
-        print("starting Matrix client")
-        asyncio.get_event_loop().run_until_complete(self.matrix_main())
-
-
-    async def create_matrix_account(self, password):
-        if self.DEBUG:
-            print("registering a Matrix account. Device id: " + str(self.persistent_data['matrix_device_id']))
-        
-        try:
-            if 'matrix_server' in self.persistent_data and 'matrix_username' in self.persistent_data:
-                #client.add_event_callback(matrix_message_callback, RoomMessageText)
-            
-                client = AsyncClient(self.persistent_data['matrix_server'])
-                print("beyond creating matrix registration client")
-                register_response = await client.register(self.persistent_data['matrix_username'], password, str(self.persistent_data['matrix_device_id']))
-                print("register_response: " + str(register_response))
-                
-                if (isinstance(register_response, LoginResponse)):
-                    print("the register_response was a valid register response.")
-                    return True
-                
-            else:
-                print("Cannot register Matrix account: matrix server url, username or password was missing")
-                
-        except Exception as ex:
-            print("Error creating Matrix account: " + str(ex))
-            
-        return False
-        
 #
 #  HANDLE REQUEST
 #
@@ -758,12 +649,25 @@ class WebinterfaceAPIHandler(APIHandler):
                 if action == 'init':
                     if self.DEBUG:
                         print('ajax handling init')
-                        print("self.persistent_data = " + str(self.persistent_data))
+                        print("web_url: " + str(self.web_url)) 
+                        print("hash: " + str(self.persistent_data['hash']))
+                        print("things: " + str(self.simple_things))
+                        print("allowed things: " + str(self.persistent_data['allowed_things']))
+                        #print("self.persistent_data = " + str(self.persistent_data))
+                        
                     return APIResponse(
                       status=200,
                       content_type='application/json',
-                      content=json.dumps({'state' : True, 'message' : '', 'web_url': self.web_url, 'persistent_data': self.persistent_data, 'things':self.simple_things }),
+                      content=json.dumps({'state' : True, 
+                                          'message' : '', 
+                                          'web_url': self.web_url, 
+                                          'uuid': self.persistent_data['uuid'],
+                                          'hash': self.persistent_data['hash'],
+                                          'things':self.simple_things,
+                                          'allowed_things': self.persistent_data['allowed_things']
+                                          }),
                     )
+                    
                     
                 elif action == 'get_new_uuid':
                     if self.DEBUG:
@@ -773,26 +677,35 @@ class WebinterfaceAPIHandler(APIHandler):
                     return APIResponse(
                       status=200,
                       content_type='application/json',
-                      content=json.dumps({'state' : True, 'message' : '', 'web_url': self.web_url, 'persistent_data': persist }),
+                      content=json.dumps({'state' : True, 
+                                          'message' : '', 
+                                          'web_url': self.web_url, 
+                                          'hash': self.persistent_data['hash'], 
+                                          'uuid': self.persistent_data['uuid'] 
+                                      }),
                     )
                     
                 elif action == 'save_token':
                     if self.DEBUG:
                         print('ajax handling save_token')
                         
+                    state = False
                     #self.persistent_data['password'] = str(request.body['password'])
                     try:
-                        self.persistent_data['token'] = str(request.body['token'])
-                        
+                        if len(str(request.body['token'])) > 20:
+                            self.persistent_data['token'] = str(request.body['token'])
+                            self.save_persistent_data()
+                            state = True
+                            
                     except Exception as ex:
                         print("Error saving token: " + str(ex))
-                    
-                    self.save_persistent_data()
                     
                     return APIResponse(
                       status=200,
                       content_type='application/json',
-                      content=json.dumps({'state' : True, 'message': '', 'web_url': self.web_url, 'persistent_data': self.persistent_data }),
+                      content=json.dumps({'state' : state, 
+                                          'message': ''
+                                          }),
                     )
                     
                     
@@ -820,7 +733,14 @@ class WebinterfaceAPIHandler(APIHandler):
                     return APIResponse(
                       status=200,
                       content_type='application/json',
-                      content=json.dumps({'state' : True, 'message' : '', 'web_url': self.web_url, 'persistent_data': self.persistent_data }),
+                      content=json.dumps({'state' : True, 
+                                          'message' : '', 
+                                          'web_url': self.web_url, 
+                                          'uuid': self.persistent_data['uuid'],
+                                          'hash': self.persistent_data['hash'],
+                                          'things':self.simple_things,
+                                          'allowed_things': self.persistent_data['allowed_things']
+                                          }),
                     )
                     
                 # Save which devices may be accessed
@@ -837,7 +757,10 @@ class WebinterfaceAPIHandler(APIHandler):
                     return APIResponse(
                       status=200,
                       content_type='application/json',
-                      content=json.dumps({'state' : state, 'message' : '' }),
+                      content=json.dumps({'state' : state, 
+                                          'message' : '',
+                                          'allowed_things': self.persistent_data['allowed_things']
+                                          }),
                     )
                     
                 # Whether outside access is allowed at all
@@ -847,7 +770,7 @@ class WebinterfaceAPIHandler(APIHandler):
                         print('ajax handling save_allowed')
                     try:
                         if 'enabled' in request.body:
-                            self.adapter.devices['webinterface'].properties["outside-access"].update(request.body['enabled'])
+                            self.adapter.devices['webinterface'].properties["outside-access"].update(bool(request.body['enabled']))
                             self.persistent_data['enabled'] = request.body['enabled']
                             self.save_persistent_data()
                         else:
@@ -859,34 +782,12 @@ class WebinterfaceAPIHandler(APIHandler):
                     return APIResponse(
                       status=200,
                       content_type='application/json',
-                      content=json.dumps({'state' : state, 'message' : '' }),
-                    )
-                    
-                elif action == 'create_matrix_account':
-                    state = True
-                    if self.DEBUG:
-                        print('ajax handling create_matrix_account')
-                    try:
-                        if 'matrix_password' in request.body and 'matrix_username' in request.body and 'matrix_server' in request.body:
-                            
-                            self.persistent_data['matrix_server'] = request.body['matrix_server']
-                            self.persistent_data['matrix_username'] = request.body['matrix_username']
-                            self.save_persistent_data()
-                            if self.DEBUG:
-                                print("api handler: calling create_matrix_account")
-                            state = self.create_matrix_account(request.body['matrix_password'])
-                            
-                            
-                        else:
-                            state = False
-                    except Exception as ex:
-                        print("Error handling create new Matrix account: " + str(ex))
-                        state = False
-                        
-                    return APIResponse(
-                      status=200,
-                      content_type='application/json',
-                      content=json.dumps({'state' : state, 'message' : '' }),
+                      content=json.dumps({'state' : state, 
+                                          'message' : '',
+                                          'enabled': self.persistent_data['enabled'],
+                                          'things':self.simple_things,
+                                          'allowed_things': self.persistent_data['allowed_things']
+                                          }),
                     )
                     
                     

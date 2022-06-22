@@ -124,7 +124,7 @@
         });
         
         
-        // Save password
+        // Save hash
         document.getElementById('extension-webinterface-save-password').addEventListener('click', (event) => {
 			//console.log(event);
             //var target = event.currentTarget;
@@ -139,16 +139,15 @@
                 return
             }
             
-            if(password1.startsWith('12345')){
-                alert("Oh come one, that's not secure");
-                return
-            }
-            
             if(password1.length < 8){
                 alert("The passwords needs to be at least 8 characters long");
                 return
             }
             
+            if(password1.startsWith('12345')){
+                alert("Oh come one, that's not secure");
+                return
+            }
             
             if (confirm('Are you sure you want to change the password?')){
           		
@@ -164,6 +163,7 @@
         			//console.log(body);
                     
         			if(body['state'] == true){
+                        document.getElementById('extension-webinterface-tip-password').style.display = 'none';
                         alert("The password was saved");
         			}
         			else{
@@ -175,7 +175,8 @@
                   	//pre.innerText = e.toString();
           			//console.log("webinterface: error in calling save via API handler");
           			//console.log(e.toString());
-        			pre.innerText = "password save failed - connection error";
+                    console.log("Saving the password failed - connection error");
+                    alert("Connection error, could not save passwordd");
                 });	
                 
             }
@@ -186,6 +187,8 @@
         document.getElementById('extension-webinterface-thing-list-save-button').addEventListener('click', (event) => {
             //console.log('save');
             var checkboxes = document.querySelectorAll('#extension-webinterface-thing-list input');
+            
+            document.getElementById('extension-webinterface-thing-list-save-button').style.display = 'none';
             
             if(checkboxes.length > 0){
                 var allowed_things = [];
@@ -203,13 +206,14 @@
                 ).then((body) => {
         			//console.log("Python API result:");
         			//console.log(body);
-                    alert("Saved succesfully");
-
+                    document.getElementById('extension-webinterface-thing-list-save-button').style.display = 'block';
+                    document.getElementById('extension-webinterface-tip-things').style.display = 'none';
                 }).catch((e) => {
                   	//pre.innerText = e.toString();
           			console.log("webinterface: error saving: ", e);
           			//console.log(e.toString());
                     alert("Could not save. Connection error?");
+                    document.getElementById('extension-webinterface-thing-list-save-button').style.display = 'block';
                 });	
                 
             }
@@ -218,79 +222,6 @@
             }
             
         });
-        
-        
-        
-        //
-        //  MATRIX
-        //
-        document.getElementById('extension-webinterface-matrix-create-account-button').addEventListener('click', (event) => {
-            console.log("create matrix account button clicked");
-            
-            const server = document.getElementById('extension-webinterface-matrix-server').value;
-            const username = document.getElementById('extension-webinterface-matrix-username').value;
-            const password1 = document.getElementById('extension-webinterface-matrix-password1').value;
-            const password2 = document.getElementById('extension-webinterface-matrix-password2').value;
-            
-            
-            if(password1 != password2){
-                alert("The passwords did not match");
-                return
-            }
-            
-            if(password1.startsWith('12345')){
-                alert("Oh come one, that's not secure");
-                return
-            }
-            
-            if(password1.length < 8){
-                alert("The passwords needs to be at least 8 characters long");
-                return
-            }
-            
-            
-            console.log("server: ", server);
-            console.log("username: ", username);
-            console.log("password: ", password1);
-            
-            window.API.postJson(
-              `/extensions/${this.id}/api/ajax`,
-                {'action':'create_matrix_account', 
-                'matrix_server':server,
-                'matrix_username',username,
-                'matrix_password':password1}
-
-            ).then((body) => {
-    			console.log("Python API create matrix account result: ", body);
-                
-    			if(body['state'] == true){
-                    alert("The account was created succesfully");
-    			}
-    			else{
-    				//console.log("not ok response while getting data");
-    				alert("Error creating new Matrix account");
-    			}
-
-            }).catch((e) => {
-              	//pre.innerText = e.toString();
-      			//console.log("webinterface: error in calling save via API handler");
-      			//console.log(e.toString());
-                console.log('error connecting while trying to create Matrix account: ', e);
-                alert("creating Matrix account failed - connection error");
-    			//pre.innerText = "creating Matrix account failed - connection error";
-            });	
-            
-            
-            
-            
-            
-        });
-        
-        
-        
-        
-        
-        
         
         this.update_data('init');
 
@@ -312,91 +243,118 @@
 
 
 			if(body['state'] == true){
-				this.persistent_data = body['persistent_data'];
+				this.persistent_data = body;
 				//this.regenerate_items();
                 
-                const qr_url = body['web_url'] + '?' + body['persistent_data']['uuid'];
-                
-                document.getElementById('extension-webinterface-uuid').value = body['persistent_data']['uuid'];
-                document.getElementById('extension-webinterface-web-url').innerText = body['web_url'];
-                document.getElementById('extension-webinterface-web-url-button').href = qr_url;
-                
-                
-                
-                const target_element = document.getElementById('extension-webinterface-qrcode');
-            	//console.log("target_element:");
-            	//console.log(target_element);
-
-                //console.log(QRCode);
-
-            	var qrcode = new QRCode(target_element, {
-            		width : 300,
-            		height : 300
-            	});
-            	qrcode.makeCode(qr_url);
-                
-                if(action == 'init'){
-                    //console.log('init response');
+                if(typeof body['web_url'] != 'undefined' && typeof body['uuid'] != 'undefined'){
+                    const qr_url = body['web_url'] + '?' + body['uuid'];
                     
-                    if(typeof body.persistent_data != 'undefined'){
-                        if(typeof body.persistent_data.enabled != 'undefined'){
-                            document.getElementById('extension-webinterface-outside-access').checked = body.persistent_data.enabled;
+                    document.getElementById('extension-webinterface-uuid').value = body['uuid'];
+                    document.getElementById('extension-webinterface-web-url').innerText = body['web_url'];
+                    document.getElementById('extension-webinterface-web-url-button').href = qr_url;
+                
+                
+                
+                    const target_element = document.getElementById('extension-webinterface-qrcode');
+            	
+
+            	    var qrcode = new QRCode(target_element, {
+            		    width : 300,
+            		    height : 300
+            	    });
+            	    qrcode.makeCode(qr_url);
+                }
+                
+                // /init
+                if(action == 'init'){
+                    //console.log('WebInterface init response: ', body);
+                    
+                    if(typeof body.enabled != 'undefined'){
+                        document.getElementById('extension-webinterface-outside-access').checked = body.enabled;
+                    }
+                    
+                    if(typeof body.hash != 'undefined'){
+                        
+                        if(document.getElementById('extension-webinterface-tip-things') != null){
+                            //console.log("body.hash: ", body.hash);
+                            if(body.hash == null){
+                                //console.log("no password set yet");
+                                document.getElementById('extension-webinterface-tip-password').style.display = 'block';
+                            }else{
+                                document.getElementById('extension-webinterface-tip-password').style.display = 'none';
+                            }
                         }
+                        
                     }
                     
                     
                     
                     const thing_list = document.getElementById('extension-webinterface-thing-list');
                     
-                    if(body.things.length == 0){
-                        thing_list.innerHTML = '<div style="background-color:rgba(0,0,0,.2);padding:2rem"><h3>There are no things to display?</h3><p>Either you have no things, or you have not granted this addon permission to access your things yet. To do so, open the Candle app store and visit the settings page of this addon. There you can grant permission.</p></div>';
-                    }
-                    else{
-                        thing_list.innerHTML = "";
-                    
-                        body.things.sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase()) ? 1 : -1) // sort alphabetically
-                    
-        				// Loop over all items
-        				for( var index in body.things ){
-    					    try{
-                                const item = body.things[index];
-                                //console.log("item: ", item);
-            					//var clone = original.cloneNode(true);
-            					//clone.removeAttribute('id');
-                    
-                                //var station_name = "Error";
-                                //var stream_url = "Error";
-                                var container = checkbox = document.createElement('div');
-                                container.classList.add('extension-webinterface-item')
+                    if(typeof body.things != 'undefined'){
+                        if(body.things.length == 0){
+                            thing_list.innerHTML = '<div style="background-color:rgba(0,0,0,.2);padding:2rem"><h3>There are no things to display?</h3><p>Either you have no things, or there is a permission problem. Try refreshing the page.</p></div>';
                         
-                                var checkbox = document.createElement('input');
-                                checkbox.type = "checkbox";
-                                checkbox.name = item.name;
-                                checkbox.id = item.name;
-                                checkbox.value = item.name;
-                                //checkbox.id = "id";
-                                if(typeof body.persistent_data.allowed_things != 'undefined'){
-                                    if( body.persistent_data.allowed_things.indexOf(item.name) > -1){
-                                        checkbox.checked = true;
+                        }
+                        else{
+                            thing_list.innerHTML = "";
+                    
+                            body.things.sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase()) ? 1 : -1) // sort alphabetically
+                    
+            				// Loop over all items
+            				for( var index in body.things ){
+        					    try{
+                                    const item = body.things[index];
+                                    //console.log("item: ", item);
+                					//var clone = original.cloneNode(true);
+                					//clone.removeAttribute('id');
+                    
+                                    //var station_name = "Error";
+                                    //var stream_url = "Error";
+                                    var container = checkbox = document.createElement('div');
+                                    container.classList.add('extension-webinterface-item')
+                        
+                                    var checkbox = document.createElement('input');
+                                    checkbox.type = "checkbox";
+                                    checkbox.name = item.name;
+                                    checkbox.id = item.name;
+                                    checkbox.value = item.name;
+                                    //checkbox.id = "id";
+                                    if(typeof body.allowed_things != 'undefined'){
+                                        if( body.allowed_things.indexOf(item.name) > -1){
+                                            checkbox.checked = true;
+                                        }
                                     }
-                                }
-                                var label = document.createElement('label');
-                                label.htmlFor = item.name;
-                                //label.appendChild(checkbox);
-                                label.appendChild(document.createTextNode(item.title));
+                                    var label = document.createElement('label');
+                                    label.htmlFor = item.name;
+                                    //label.appendChild(checkbox);
+                                    label.appendChild(document.createTextNode(item.title));
                             
-                                container.appendChild(checkbox);
-                                container.appendChild(label);
+                                    container.appendChild(checkbox);
+                                    container.appendChild(label);
                         
-                                thing_list.appendChild(container);
-    					    }
-                            catch(e){
-                                //console.log("Error generating an item: ", e);
+                                    thing_list.appendChild(container);
+        					    }
+                                catch(e){
+                                    //console.log("Error generating an item: ", e);
+                                }
+                            
+                            }
+                            document.getElementById('extension-webinterface-thing-list-button-container').style.display = 'block';
+                        
+                            if(typeof body.allowed_things != 'undefined'){
+                                //console.log("body.allowed_things: ", body.allowed_things);
+                                // If no devices are allowed to be controller, show a warning in the first tab
+                                if(body.allowed_things.length == 0){
+                                    document.getElementById('extension-webinterface-tip-things').style.display = 'block';
+                                }else{
+                                    document.getElementById('extension-webinterface-tip-things').style.display = 'none';
+                                }
                             }
                             
                         }
-                        document.getElementById('extension-webinterface-thing-list-button-container').style.display = 'block';
                     }
+                    
                     
                 
                 }
@@ -414,7 +372,7 @@
           	//pre.innerText = e.toString();
   			//console.log("webinterface: error in calling init via API handler");
   			//console.log(e.toString());
-			pre.innerText = "Loading items failed - connection error";
+			console.log("WebInterface: Loading items failed - connection error: ", e);
         });	
 	}
 	
