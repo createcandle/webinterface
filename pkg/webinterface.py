@@ -395,16 +395,20 @@ class WebinterfaceAPIHandler(APIHandler):
                                                     if self.DEBUG:
                                                         print("action dict: " + str(action))
                                                     #for action in actions:
-                                                    #print("action url: " + str(action['url']))
+                                                    #if self.DEBUG:
+                                                    #    print("action url: " + str(action['url']))
                                                     #print("action value: " + str(action['value']))
                                                     #print("action: " + str(action))
-                            
-                                                    prop_id = os.path.basename(os.path.normpath( action['url'] ))
-                                                    #print("prop_id = " + str(prop_id))
-                                                    #print("action['value'] = " + str(action['value']))
-                                                    data_to_put = { str(prop_id) : action['value'] }
-                                                    #print("data_to_put = " + str(data_to_put))
-                                                    api_put_result = self.api_put( action['url'], data_to_put )
+                                                    if action['url'] != "" and action['url'] != None:
+                                                        prop_id = os.path.basename(os.path.normpath( action['url'] ))
+                                                        #print("prop_id = " + str(prop_id))
+                                                        #print("action['value'] = " + str(action['value']))
+                                                        data_to_put = { str(prop_id) : action['value'] }
+                                                        #print("data_to_put = " + str(data_to_put))
+                                                        api_put_result = self.api_put( action['url'], data_to_put )
+                                                    else:
+                                                        if self.DEBUG:
+                                                            print("Error, action url was not ok: " + str(action['url']))
                                                 else:
                                                     if self.DEBUG:
                                                         print("Warning: incoming action data did not contain encrypted actions list. No actions to perform yet.")
@@ -542,9 +546,11 @@ class WebinterfaceAPIHandler(APIHandler):
                             if len(thing['properties'][prop]['forms']) != 0:
                                 using_forms = True
                                 for i in range(len(thing['properties'][prop]['forms'])):
-                                    if thing['properties'][prop]['forms'][i]['rel'] == 'property':
-                                        href = thing['properties'][prop]['forms'][i]['href']
-                            
+                                    if 'rel' in thing['properties'][prop]['forms'][i]:
+                                        if thing['properties'][prop]['forms'][i]['rel'] == 'property':
+                                            href = thing['properties'][prop]['forms'][i]['href']
+                                if href == "":
+                                    href = thing['properties'][prop]['forms'][0]['href']
                         
                         if using_forms == False:   
                             if 'links' in thing['properties'][prop]:
@@ -553,7 +559,9 @@ class WebinterfaceAPIHandler(APIHandler):
                                     for i in range(len(thing['properties'][prop]['links'])):
                                         if thing['properties'][prop]['links'][i]['rel'] == 'property':
                                             href = thing['properties'][prop]['links'][i]['href']
-                    
+                                    if href == "":
+                                        href = thing['properties'][prop]['links'][0]['href']
+                                            
                     
                         if href != "":
                             
@@ -812,7 +820,7 @@ class WebinterfaceAPIHandler(APIHandler):
     def unload(self):
         self.running = False
         if self.DEBUG:
-            print("Webinterface api handler shutting down")
+            print("Webinterface: in unload. Goodbye\n\n")
 
 
 
