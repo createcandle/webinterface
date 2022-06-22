@@ -51,7 +51,7 @@
     }
   },
   "short_name": "webinterface",
-  "version": "0.1.11",
+  "version": "0.1.14",
   "web_accessible_resources": [
     "css/*.css",
     "images/*.svg",
