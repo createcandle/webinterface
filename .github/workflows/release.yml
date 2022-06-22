@@ -16,9 +16,6 @@ jobs:
     - name: Install olm
       run: |
         sudo apt-get install libolm-dev
-    - name: Update pip
-      run: |
-        /opt/hostedtoolcache/Python/3.9.10/x64/bin/python -m pip install --upgrade pip
     - name: Package project
       run: |
         ./package.sh
