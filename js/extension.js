@@ -5,6 +5,7 @@
 		//console.log("Adding webinterface addon to menu");
       	this.addMenuEntry('Web interface');
 
+        this.debug = false;
       	this.content = '';
         this.persistent_data = null;
 
@@ -241,131 +242,140 @@
 			//console.log("Python API result:");
 			//console.log(body);
 
+            if(typeof body['debug'] != 'undefined'){
+                this.debug = body['debug']
+            }
 
-			if(body['state'] == true){
-				this.persistent_data = body;
-				//this.regenerate_items();
+            if(this.debug){
+                console.log("Webinterface API result: ", body);
+            }
+
+            if(typeof body['state'] != 'undefined'){
+    			if(body['state'] == true){
+    				this.persistent_data = body;
+    				//this.regenerate_items();
                 
-                if(typeof body['web_url'] != 'undefined' && typeof body['uuid'] != 'undefined'){
-                    const qr_url = body['web_url'] + '?' + body['uuid'];
+                    if(typeof body['web_url'] != 'undefined' && typeof body['uuid'] != 'undefined'){
+                        const qr_url = body['web_url'] + '?' + body['uuid'];
                     
-                    document.getElementById('extension-webinterface-uuid').value = body['uuid'];
-                    document.getElementById('extension-webinterface-web-url').innerText = body['web_url'];
-                    document.getElementById('extension-webinterface-web-url-button').href = qr_url;
+                        document.getElementById('extension-webinterface-uuid').value = body['uuid'];
+                        document.getElementById('extension-webinterface-web-url').innerText = body['web_url'];
+                        document.getElementById('extension-webinterface-web-url-button').href = qr_url;
                 
                 
                 
-                    const target_element = document.getElementById('extension-webinterface-qrcode');
+                        const target_element = document.getElementById('extension-webinterface-qrcode');
             	
 
-            	    var qrcode = new QRCode(target_element, {
-            		    width : 300,
-            		    height : 300
-            	    });
-            	    qrcode.makeCode(qr_url);
-                }
+                	    var qrcode = new QRCode(target_element, {
+                		    width : 300,
+                		    height : 300
+                	    });
+                	    qrcode.makeCode(qr_url);
+                    }
                 
-                // /init
-                if(action == 'init'){
-                    //console.log('WebInterface init response: ', body);
+                    // /init
+                    if(action == 'init'){
+                        //console.log('WebInterface init response: ', body);
                     
-                    if(typeof body.enabled != 'undefined'){
-                        document.getElementById('extension-webinterface-outside-access').checked = body.enabled;
-                    }
-                    
-                    if(typeof body.hash != 'undefined'){
-                        
-                        if(document.getElementById('extension-webinterface-tip-things') != null){
-                            //console.log("body.hash: ", body.hash);
-                            if(body.hash == null){
-                                //console.log("no password set yet");
-                                document.getElementById('extension-webinterface-tip-password').style.display = 'block';
-                            }else{
-                                document.getElementById('extension-webinterface-tip-password').style.display = 'none';
-                            }
+                        if(typeof body.enabled != 'undefined'){
+                            document.getElementById('extension-webinterface-outside-access').checked = body.enabled;
                         }
+                    
+                        if(typeof body.hash != 'undefined'){
                         
-                    }
-                    
-                    
-                    
-                    const thing_list = document.getElementById('extension-webinterface-thing-list');
-                    
-                    if(typeof body.things != 'undefined'){
-                        if(body.things.length == 0){
-                            thing_list.innerHTML = '<div style="background-color:rgba(0,0,0,.2);padding:2rem"><h3>There are no things to display?</h3><p>Either you have no things, or there is a permission problem. Try refreshing the page.</p></div>';
-                        
-                        }
-                        else{
-                            thing_list.innerHTML = "";
-                    
-                            body.things.sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase()) ? 1 : -1) // sort alphabetically
-                    
-            				// Loop over all items
-            				for( var index in body.things ){
-        					    try{
-                                    const item = body.things[index];
-                                    //console.log("item: ", item);
-                					//var clone = original.cloneNode(true);
-                					//clone.removeAttribute('id');
-                    
-                                    //var station_name = "Error";
-                                    //var stream_url = "Error";
-                                    var container = checkbox = document.createElement('div');
-                                    container.classList.add('extension-webinterface-item')
-                        
-                                    var checkbox = document.createElement('input');
-                                    checkbox.type = "checkbox";
-                                    checkbox.name = item.name;
-                                    checkbox.id = item.name;
-                                    checkbox.value = item.name;
-                                    //checkbox.id = "id";
-                                    if(typeof body.allowed_things != 'undefined'){
-                                        if( body.allowed_things.indexOf(item.name) > -1){
-                                            checkbox.checked = true;
-                                        }
-                                    }
-                                    var label = document.createElement('label');
-                                    label.htmlFor = item.name;
-                                    //label.appendChild(checkbox);
-                                    label.appendChild(document.createTextNode(item.title));
-                            
-                                    container.appendChild(checkbox);
-                                    container.appendChild(label);
-                        
-                                    thing_list.appendChild(container);
-        					    }
-                                catch(e){
-                                    //console.log("Error generating an item: ", e);
-                                }
-                            
-                            }
-                            document.getElementById('extension-webinterface-thing-list-button-container').style.display = 'block';
-                        
-                            if(typeof body.allowed_things != 'undefined'){
-                                //console.log("body.allowed_things: ", body.allowed_things);
-                                // If no devices are allowed to be controller, show a warning in the first tab
-                                if(body.allowed_things.length == 0){
-                                    document.getElementById('extension-webinterface-tip-things').style.display = 'block';
+                            if(document.getElementById('extension-webinterface-tip-things') != null){
+                                //console.log("body.hash: ", body.hash);
+                                if(body.hash == null){
+                                    //console.log("no password set yet");
+                                    document.getElementById('extension-webinterface-tip-password').style.display = 'block';
                                 }else{
-                                    document.getElementById('extension-webinterface-tip-things').style.display = 'none';
+                                    document.getElementById('extension-webinterface-tip-password').style.display = 'none';
                                 }
                             }
-                            
+                        
                         }
+                    
+                    
+                    
+                        const thing_list = document.getElementById('extension-webinterface-thing-list');
+                    
+                        if(typeof body.things != 'undefined'){
+                            if(body.things.length == 0){
+                                thing_list.innerHTML = '<div style="background-color:rgba(0,0,0,.2);padding:2rem"><h3>There are no things to display?</h3><p>Either you have no things, or there is a permission problem. Try refreshing the page.</p></div>';
+                        
+                            }
+                            else{
+                                thing_list.innerHTML = "";
+                    
+                                body.things.sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase()) ? 1 : -1) // sort alphabetically
+                    
+                				// Loop over all items
+                				for( var index in body.things ){
+            					    try{
+                                        const item = body.things[index];
+                                        //console.log("item: ", item);
+                    					//var clone = original.cloneNode(true);
+                    					//clone.removeAttribute('id');
+                    
+                                        //var station_name = "Error";
+                                        //var stream_url = "Error";
+                                        var container = checkbox = document.createElement('div');
+                                        container.classList.add('extension-webinterface-item')
+                        
+                                        var checkbox = document.createElement('input');
+                                        checkbox.type = "checkbox";
+                                        checkbox.name = item.name;
+                                        checkbox.id = item.name;
+                                        checkbox.value = item.name;
+                                        //checkbox.id = "id";
+                                        if(typeof body.allowed_things != 'undefined'){
+                                            if( body.allowed_things.indexOf(item.name) > -1){
+                                                checkbox.checked = true;
+                                            }
+                                        }
+                                        var label = document.createElement('label');
+                                        label.htmlFor = item.name;
+                                        //label.appendChild(checkbox);
+                                        label.appendChild(document.createTextNode(item.title));
+                            
+                                        container.appendChild(checkbox);
+                                        container.appendChild(label);
+                        
+                                        thing_list.appendChild(container);
+            					    }
+                                    catch(e){
+                                        //console.log("Error generating an item: ", e);
+                                    }
+                            
+                                }
+                                document.getElementById('extension-webinterface-thing-list-button-container').style.display = 'block';
+                        
+                                if(typeof body.allowed_things != 'undefined'){
+                                    //console.log("body.allowed_things: ", body.allowed_things);
+                                    // If no devices are allowed to be controller, show a warning in the first tab
+                                    if(body.allowed_things.length == 0){
+                                        document.getElementById('extension-webinterface-tip-things').style.display = 'block';
+                                    }else{
+                                        document.getElementById('extension-webinterface-tip-things').style.display = 'none';
+                                    }
+                                }
+                            
+                            }
+                        }
+                    
+                    
+                
                     }
-                    
-                    
-                
-                }
                 
                 
                 
-			}
-			else{
-				//console.log("not ok response while getting data");
-				//pre.innerText = body['message'];
-			}
+    			}
+    			else{
+    				//console.log("not ok response while getting data");
+    				//pre.innerText = body['message'];
+    			}
+            }
             
 
         }).catch((e) => {

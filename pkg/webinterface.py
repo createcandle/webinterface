@@ -126,9 +126,7 @@ class WebinterfaceAPIHandler(APIHandler):
         if self.persistent_data['uuid'] == "":
             self.get_new_uuid()
             
-        if 'enabled' not in self.persistent_data:
-            self.persistent_data['enabled'] = False
-            self.save_persistent_data()
+        
             
         if 'hash' not in self.persistent_data:
             self.persistent_data['hash'] = None
@@ -143,7 +141,10 @@ class WebinterfaceAPIHandler(APIHandler):
         if 'hash' not in self.persistent_data:
             self.persistent_data['hash'] = ""
             
-            
+        if 'enabled' not in self.persistent_data:
+            self.persistent_data['enabled'] = False
+            self.save_persistent_data()
+        
         # Intiate extension addon API handler
         try:
             manifest_fname = os.path.join(
@@ -202,11 +203,11 @@ class WebinterfaceAPIHandler(APIHandler):
         # clear old data
         if 'hash' in self.persistent_data:
             if self.persistent_data['hash'] != None:
-                r = requests.post(self.web_url + 'receiver.php', data={"hash":self.persistent_data['hash'], "time":0 })
-                a = requests.post(self.web_url + 'get_actions.php', data={"hash":self.persistent_data['hash'], "uuid":self.persistent_data['uuid'] })
+                r = requests.post(self.web_url + 'put_things', data={"hash":self.persistent_data['hash'], "time":0 })
+                a = requests.post(self.web_url + 'get_actions', data={"hash":self.persistent_data['hash'], "uuid":self.persistent_data['uuid'] })
               
         # get new UUID
-        a = requests.get(self.web_url + 'uuid.php')
+        a = requests.get(self.web_url + 'get_uuid')
         #print("actions data: " + str(a.content))
         uuid_json = a.json()
         if self.DEBUG:
@@ -297,185 +298,237 @@ class WebinterfaceAPIHandler(APIHandler):
             time.sleep(1)
             #print(".")
             seconds_counter += 1
+            if self.DEBUG:
+                print("seconds_counter: " + str(seconds_counter))
             if seconds_counter >= self.poll_interval:
                 seconds_counter = 0
-            try:
                 
-                if self.last_active_state == True and self.last_activity_time < time.time() - 60:
-                    self.last_active_state = False
-                    self.adapter.devices['webinterface'].properties["activity"].update(False) # the outside user is no longer active
+                try:
                 
-                #if not hasattr(self.persistent_data, 'hash'):
-                if not 'hash' in self.persistent_data:
-                    #if self.DEBUG:
-                    #    print("missing hash: " + str(self.persistent_data))
-                    continue
-                    
-                if self.persistent_data['hash'] == None:
-                    #if self.DEBUG:
-                    #    print("hash was still none: " + str(self.persistent_data))
-                    continue
-                    
-                if self.persistent_data['enabled']:
-                    self.previous_enabled_state = True
-                    #print("Did the things API call. Self.things is now:")
-                    #print(str(self.things))
-                    if self.DEBUG:
-                        print(str(seconds_counter))
-                    #print(str( self.web_url + "gettime.php" ))
+                    if self.last_active_state == True and self.last_activity_time < time.time() - 60:
+                        self.last_active_state = False
+                        self.adapter.devices['webinterface'].properties["activity"].update(False) # the outside user is no longer active
                 
-                    parameters = {"fresh":False, "hash": self.persistent_data['hash'], "uuid": self.persistent_data['uuid'] }
-                    if self.DEBUG:
-                        print("sending: " + str(parameters))
-                    q = requests.post( self.web_url + "gettime.php", data = parameters)
-                    #print("q.content = " + str(q.content))
-                    timejson = q.json()
-                    #print("timejson = " + str(timejson))
-                    #print("loading json via loads")
-                    #timejson = json.loads( timejson )
-                
-                    #print(str(timejson))
-                    #print(str(time.time()))
-                    if 'time' in timejson:
+                    #if not hasattr(self.persistent_data, 'hash'):
+                    if not 'hash' in self.persistent_data:
                         #if self.DEBUG:
-                        #    print("gettime.php: timejson['time']: " + str(timejson['time']))
-                            
-                        if timejson['time'] == 0:
-                            #if self.DEBUG:
-                            #    print("the data on the server had a time of 0, indicating it was put there by this controller itself, and not by the web UI. Stopping.")
-                            continue
-                            
-                        time_delta = abs( time.time() - ( timejson['time'] ) ) # / 1000
-                        self.total_time_delta += time_delta
-                        if self.DEBUG:
-                            print("time delta: " + str( time_delta ) )
-                            print("total time delta: " + str( self.total_time_delta ) )
-                        #print("")
-                        #print("timejson password = " + str(timejson['password']))
-                        #print("self.persistent_data['hash'] = " + str(self.persistent_data['hash']))
-                        
-                        if time_delta < 15:
-                            if self.DEBUG:
-                                print("time delta was smaller than 15 seconds")
-                            if 'hash' in timejson:
-                                if self.persistent_data['hash'] == str(timejson['hash']):
-                                    #print("hash == hash, and time is ok too.")
+                        #    print("missing hash: " + str(self.persistent_data))
+                        continue
                     
-                                    self.last_activity_time = time.time()
+                    if self.persistent_data['hash'] == None:
+                        #if self.DEBUG:
+                        #    print("hash was still none: " + str(self.persistent_data))
+                        continue
+                    
+                    if not 'uuid' in self.persistent_data:
+                        continue
+                    
+                    if self.persistent_data['uuid'] == None:
+                        continue
+                    
+                    if self.persistent_data['enabled']:
+                        if self.DEBUG:
+                            print("\nENABLED")
+                        self.previous_enabled_state = True
+                        #print("Did the things API call. Self.things is now:")
+                        #print(str(self.things))
+                        
+                    
+                        timejson = {}
+                        try:
+                            parameters = {"fresh":False, "hash": self.persistent_data['hash'], "uuid": self.persistent_data['uuid'] }
+                            if self.DEBUG:
+                                print("calling /get_time: " + str(parameters))
+                            q = requests.post( self.web_url + "get_time", data = parameters)
+                            #print("q.content = " + str(q.content))
+                            timejson = q.json()
+                            if self.DEBUG:
+                                print("/get_time returned: " + str(timejson))
+                        except Exception as ex:
+                            print("Clock: error asking server for time: " + str(ex))
+                            print("- url: " + str(self.web_url) + "get_time")
+                            print("- hash: " + str(self.persistent_data['hash']))
+                            print("- uuid: " + str(self.persistent_data['uuid']))
+                    
+                        #print("timejson = " + str(timejson))
+                        #print("loading json via loads")
+                        #timejson = json.loads( timejson )
+                
+                        #print(str(timejson))
+                        #print(str(time.time()))
+                        if 'time' in timejson:
+                            #if self.DEBUG:
+                            #    print("get_time: timejson['time']: " + str(timejson['time']))
+                            
+                            if timejson['time'] == 0:
+                                #if self.DEBUG:
+                                #    print("the data on the server had a time of 0, indicating it was put there by this controller itself, and not by the web UI. Stopping.")
+                                continue
+                            
+                            time_delta = abs( time.time() - ( timejson['time'] ) ) # / 1000
+                            self.total_time_delta += time_delta
+                            if self.DEBUG:
+                                print("time delta: " + str( time_delta ) )
+                                print("total time delta: " + str( self.total_time_delta ) )
+                            #print("")
+                            #print("timejson password = " + str(timejson['password']))
+                            #print("self.persistent_data['hash'] = " + str(self.persistent_data['hash']))
+                        
+                            if time_delta < 15:
+                                if self.DEBUG:
+                                    print("time delta was smaller than 15 seconds")
                                     
-                                    if self.last_active_state == False:
-                                        self.last_active_state = True
-                                        self.adapter.devices['webinterface'].properties["activity"].update(True) # Indicate that someone is accessing the system from the outside
+                                self.poll_interval = 4
                                     
-                                    # First, check if there are any actions that need to be performed buffered on the server.
-                                    try:
-                                        a = requests.post(self.web_url + 'get_actions.php', data={"hash":self.persistent_data['hash'], "uuid":self.persistent_data['uuid'] })
-                                        #if self.DEBUG:
-                                        if self.DEBUG:
-                                            print("actions data: " + str(a.content))
-                                            
-                                        if len(str(a.content)) > 5:
-                                            
-                                            messages = a.json()
+                                if 'hash' in timejson:
+                                    if self.persistent_data['hash'] == str(timejson['hash']):
+                                        #print("hash == hash, and time is ok too.")
+                    
+                                        self.last_activity_time = time.time()
+                                    
+                                        if self.last_active_state == False:
+                                            self.last_active_state = True
+                                            self.adapter.devices['webinterface'].properties["activity"].update(True) # Indicate that someone is accessing the system from the outside
+                                    
+                                        # First, check if there are any actions that need to be performed buffered on the server.
+                                        try:
+                                            a = requests.post(self.web_url + 'get_actions', data={"hash":self.persistent_data['hash'], "uuid":self.persistent_data['uuid'] })
                                             #if self.DEBUG:
                                             if self.DEBUG:
-                                                print(str("incoming actions messages data: " + str(messages))) 
-                                            #print(aes256.decrypt(encrypted, self.persistent_data['hash']))
-                                            for message in messages:
-                                                if 'encrypted' in message:
-                                                    encrypted = message['encrypted']
-                                                    if self.DEBUG:
-                                                        print("action encrypted = " + str(encrypted))
-                                                    #decrypted = aes256.decrypt(encrypted, keyring.get_password('webinterface', webinterface) ) #self.persistent_data['password'])
-                                                    decrypted = aes256.decrypt(encrypted, self.persistent_data['password'] )
+                                                print("actions data: " + str(a.content))
+                                            
+                                            if len(str(a.content)) > 5:
+                                            
+                                                messages = a.json()
+                                                #if self.DEBUG:
+                                                if self.DEBUG:
+                                                    print(str("incoming actions messages data: " + str(messages))) 
+                                                #print(aes256.decrypt(encrypted, self.persistent_data['hash']))
+                                                for message in messages:
+                                                    if 'encrypted' in message:
+                                                        encrypted = message['encrypted']
+                                                        if self.DEBUG:
+                                                            print("action encrypted = " + str(encrypted))
+                                                        #decrypted = aes256.decrypt(encrypted, keyring.get_password('webinterface', webinterface) ) #self.persistent_data['password'])
+                                                        decrypted = aes256.decrypt(encrypted, self.persistent_data['password'] )
                                                 
-                                                    if self.DEBUG:
-                                                        print("actions decrypted = " + str(decrypted))
-                                                    action = json.loads( decrypted )
-                                                    if self.DEBUG:
-                                                        print("action dict: " + str(action))
-                                                    #for action in actions:
-                                                    #if self.DEBUG:
-                                                    #    print("action url: " + str(action['url']))
-                                                    #print("action value: " + str(action['value']))
-                                                    #print("action: " + str(action))
-                                                    if action['url'] != "" and action['url'] != None:
-                                                        prop_id = os.path.basename(os.path.normpath( action['url'] ))
-                                                        #print("prop_id = " + str(prop_id))
-                                                        #print("action['value'] = " + str(action['value']))
-                                                        data_to_put = { str(prop_id) : action['value'] }
-                                                        #print("data_to_put = " + str(data_to_put))
-                                                        api_put_result = self.api_put( action['url'], data_to_put )
+                                                        if self.DEBUG:
+                                                            print("actions decrypted = " + str(decrypted))
+                                                        action = json.loads( decrypted )
+                                                        if self.DEBUG:
+                                                            print("action dict: " + str(action))
+                                                        #for action in actions:
+                                                        #if self.DEBUG:
+                                                        #    print("action url: " + str(action['url']))
+                                                        #print("action value: " + str(action['value']))
+                                                        #print("action: " + str(action))
+                                                        if action['url'] != "" and action['url'] != None:
+                                                            prop_id = os.path.basename(os.path.normpath( action['url'] ))
+                                                            #print("prop_id = " + str(prop_id))
+                                                            #print("action['value'] = " + str(action['value']))
+                                                            data_to_put = { str(prop_id) : action['value'] }
+                                                            #print("data_to_put = " + str(data_to_put))
+                                                            api_put_result = self.api_put( action['url'], data_to_put )
+                                                        else:
+                                                            if self.DEBUG:
+                                                                print("Error, action url was not ok: " + str(action['url']))
                                                     else:
                                                         if self.DEBUG:
-                                                            print("Error, action url was not ok: " + str(action['url']))
-                                                else:
-                                                    if self.DEBUG:
-                                                        print("Warning: incoming action data did not contain encrypted actions list. No actions to perform yet.")
+                                                            print("Warning: incoming action data did not contain encrypted actions list. No actions to perform yet.")
                                                     
-                                    except Exception as ex:
-                                        print("Error getting or handling latest action messages: " + str(ex))
+                                        except Exception as ex:
+                                            print("Error getting or handling latest action messages: " + str(ex))
                             
-                                            #if self.persistent_data['hash'] == str(action['hash']):
-                                            #    print("GOOD HASH")
+                                                #if self.persistent_data['hash'] == str(action['hash']):
+                                                #    print("GOOD HASH")
                                 
-            
-                                    time.sleep(.1)
-                                    if self.total_time_delta > 5:
-                                        self.total_time_delta = 0
-                                        #if self.DEBUG:
-                                        if self.DEBUG:
-                                            print("Password ok, and some time has passed. Posting update of all things to web")
+                                        try:
+                                            time.sleep(.1)
+                                            if self.total_time_delta > 5:
+                                                self.total_time_delta = 0
+                                                #if self.DEBUG:
+                                                if self.DEBUG:
+                                                    print("Password ok, and some time has passed. Posting update of all things to web")
 
-                                        #print("")
-                                        #print("__THINGS__")
-                                        #print("")
-                                        #print(str(self.things))
-                                        self.update_things() # this goes over every property and gets the actual latest value. It also creates the list of things data that is allowed to be sent.
-                                        #print("")
-                                        #print("")
+                                                #print("")
+                                                #print("__THINGS__")
+                                                #print("")
+                                                #print(str(self.things))
+                                                self.update_things() # this goes over every property and gets the actual latest value. It also creates the list of things data that is allowed to be sent.
+                                                #print("")
+                                                #print("")
                                         
-                                        things_string = json.dumps(self.things_to_send)
-                                        #if self.DEBUG:
-                                        #    print("sending: " + str(things_string))
-                                        #encrypted_string = aes256.encrypt(things_string, keyring.get_password('webinterface', webinterface))
-                                        encrypted_string = aes256.encrypt(things_string, self.persistent_data['password'])
-                                        #encoded_string = encrypted_string.decode('utf-8')
-                                        #print("encrypted string: ")
-                                        #print(str(encrypted_string.decode('utf-8')))
+                                                things_string = json.dumps(self.things_to_send)
+                                                #if self.DEBUG:
+                                                #    print("sending: " + str(things_string))
+                                                #encrypted_string = aes256.encrypt(things_string, keyring.get_password('webinterface', webinterface))
+                                                encrypted_string = aes256.encrypt(things_string, self.persistent_data['password'])
+                                                #encoded_string = encrypted_string.decode('utf-8')
+                                                #print("encrypted string: ")
+                                                #print(str(encrypted_string.decode('utf-8')))
                         
-                                        decoded_base64_string = base64.b64decode(encrypted_string)
-                                        #print("decoded_base64_string:")
-                                        #print(str(decoded_base64_string))
+                                                decoded_base64_string = base64.b64decode(encrypted_string)
+                                                #print("decoded_base64_string:")
+                                                #print(str(decoded_base64_string))
                         
-                                        base64_string = base64.b64encode(encrypted_string) # .encode('utf-8')  # .decode('UTF-8')
-                                        decoded_string = base64_string.decode('utf-8')
-                                        #print("decoded base64 string:")
-                                        #print(decoded_string)
+                                                base64_string = base64.b64encode(encrypted_string) # .encode('utf-8')  # .decode('UTF-8')
+                                                decoded_string = base64_string.decode('utf-8')
+                                                #print("decoded base64 string:")
+                                                #print(decoded_string)
                                         
-                                        r = requests.post(self.web_url + 'receiver.php', data={"hash":self.persistent_data['hash'], "uuid":self.persistent_data['uuid'], "time":time.time(), "encrypted":encrypted_string.decode('utf-8') }) # json={"hash":self.persistent_data['hash'],"encrypted": encrypted_string.decode('utf-8')})
+                                                r = requests.post(self.web_url + 'put_things', data={"hash":self.persistent_data['hash'], "uuid":self.persistent_data['uuid'], "time":time.time(), "encrypted":encrypted_string.decode('utf-8') }) # json={"hash":self.persistent_data['hash'],"encrypted": encrypted_string.decode('utf-8')})
+                                        except Exception as ex:
+                                            print("Error posting latest things states to web: " + str(ex))
                                         
-                                else:
-                                    if self.DEBUG:
-                                        print("hashes (passwords) did not match")
-                                    if seconds_counter == 0:
-                                        r = requests.post(self.web_url + 'receiver.php', data={"hash":self.persistent_data['hash'], "time":0 })
+                                    
+                                        
+                                    else:
+                                        if self.DEBUG:
+                                            print("hashes (passwords) did not match. Deleting data on proxy server.")
+                                        if seconds_counter == 0:
+                                            r = requests.post(self.web_url + 'delete', data={"hash":self.persistent_data['hash'], "uuid":self.persistent_data['uuid']}) # ask the server to delete all the data (which it does by itself already too, each time the web UI loads data)
+                                            if self.DEBUG:
+                                                print("data on proxy deleted? " + str(r.text))
                     
-                        # if time_delta > 15 seconds
+                            # if time_delta > 15 seconds
+                            else:
+                                # if there is nobody at the other end
+                                
+                                    
+                                if self.DEBUG:
+                                    print("time delta was larger than 15 seconds: " + str(time_delta))
+                                
+                                if self.poll_interval < 10:
+                                    r = requests.post(self.web_url + 'delete', data={"hash":self.persistent_data['hash'], "uuid":self.persistent_data['uuid']}) # ask the server to delete all the data (which it does by itself already too, each time the web UI loads data)
+                                    if self.DEBUG:
+                                        print("data on proxy deleted? " + str(r.text))
+                                
+                                self.poll_interval = 10
+                                
+                                if time_delta > 1800:
+                                    self.poll_interval = 20
+                                
+                                #delete_result = r.json()
+                                #if self.DEBUG:
+                                #    print("- delete result: " + str(delete_result))
                         else:
-                            #if self.DEBUG:
-                            #    print("Error: time delta was larger than 15 seconds. It was: " + str(time_delta))
-                            r = requests.post(self.web_url + 'receiver.php', data={"hash":self.persistent_data['hash'], "time":0 }) # ask the server to delete all the data (which it does by itself already too)
+                            if self.DEBUG:
+                                print("clock: error: no time response?")
+                            
+                    else:
+                        try:
+                            if self.previous_enabled_state == True:
+                                if self.DEBUG:
+                                    print( "outside access has just been disabled. Asking proxy server to delete all data.")
+                                # Delete all data on the webserver.
+                                r = requests.post(self.web_url + 'delete', data={"hash":self.persistent_data['hash'], "uuid":self.persistent_data['uuid']}) # ask the server to delete all the data (which it does by itself already too, each time the web UI loads data)
+                                self.previous_enabled_state = False
+                        except Exception as ex:
+                            print("Clock: error asking server to delete all data: " + str(ex))
+                    
                 
-                else:
-                    if self.previous_enabled_state == True:
-                        # Delete all data on the webserver.
-                        r = requests.post(self.web_url + 'receiver.php', data={"hash":self.persistent_data['hash'], "time":0 })
-                        a = requests.post(self.web_url + 'get_actions.php', data={"hash":self.persistent_data['hash'], "uuid":self.persistent_data['uuid'] })
-                        self.previous_enabled_state = False
-                
-            except Exception as ex:
-                print("Clock: error preparing updated things data: " + str(ex))
+                except Exception as ex:
+                    print("Clock: error preparing updated things data: " + str(ex))
                         
 
 
@@ -520,7 +573,8 @@ class WebinterfaceAPIHandler(APIHandler):
                     #print("thing: " + str(thing))
                     new_simple_things.append({'title':thing['title'], 'name':thing_name})
                 except Exception as ex:
-                    print("update things: no thing name?" + str(ex))
+                    if self.DEBUG:
+                        print("update things: no thing name?" + str(ex))
                 
                 
                 if thing_name not in self.persistent_data['allowed_things']:
@@ -534,8 +588,8 @@ class WebinterfaceAPIHandler(APIHandler):
                     try:
                         href = ""
                         
-                        if self.DEBUG:
-                            print("property: " + str(thing['properties'][prop]))
+                        #if self.DEBUG:
+                        #    print("property: " + str(thing['properties'][prop]))
                         
                         if 'value' in thing['properties'][prop]:
                             if self.DEBUG:
@@ -568,8 +622,8 @@ class WebinterfaceAPIHandler(APIHandler):
                             #if self.DEBUG:
                             #    print("href = " + str(href))
                             prop_val = self.api_get(href)
-                            if self.DEBUG:
-                                print("prop_val: " + str(prop_val))
+                            #if self.DEBUG:
+                            #    print("prop_val: " + str(prop_val))
                             for key in prop_val:
                                 if key != 'error':
                                     
@@ -669,10 +723,12 @@ class WebinterfaceAPIHandler(APIHandler):
                       content=json.dumps({'state' : True, 
                                           'message' : '', 
                                           'web_url': self.web_url, 
+                                          'enabled': self.persistent_data['enabled'],
                                           'uuid': self.persistent_data['uuid'],
                                           'hash': self.persistent_data['hash'],
                                           'things':self.simple_things,
-                                          'allowed_things': self.persistent_data['allowed_things']
+                                          'allowed_things': self.persistent_data['allowed_things'],
+                                          'debug':self.DEBUG
                                           }),
                     )
                     
