@@ -226,6 +226,8 @@
         
         this.update_data('init');
 
+
+
 	}
 	
     
@@ -234,9 +236,11 @@
         
         const pre = document.getElementById('extension-webinterface-response-data');
         
+        const jwt = localStorage.getItem('jwt');
+        
         window.API.postJson(
           `/extensions/${this.id}/api/ajax`,
-					    {'action':action}
+					    {'action':action,'token':jwt}
 
         ).then((body) => {
 			//console.log("Python API result:");
@@ -284,7 +288,7 @@
                     
                         if(typeof body.hash != 'undefined'){
                         
-                            if(document.getElementById('extension-webinterface-tip-things') != null){
+                            if(document.getElementById('extension-webinterface-tip-password') != null){
                                 //console.log("body.hash: ", body.hash);
                                 if(body.hash == null){
                                     //console.log("no password set yet");
@@ -354,6 +358,7 @@
                                 if(typeof body.allowed_things != 'undefined'){
                                     //console.log("body.allowed_things: ", body.allowed_things);
                                     // If no devices are allowed to be controller, show a warning in the first tab
+                                    console.log("body.allowed_things.length: ", body.allowed_things.length);
                                     if(body.allowed_things.length == 0){
                                         document.getElementById('extension-webinterface-tip-things').style.display = 'block';
                                     }else{

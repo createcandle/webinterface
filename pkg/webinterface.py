@@ -301,6 +301,8 @@ class WebinterfaceAPIHandler(APIHandler):
             if self.DEBUG:
                 print("seconds_counter: " + str(seconds_counter))
             if seconds_counter >= self.poll_interval:
+                if self.DEBUG:
+                    print("seconds passed: " + str(seconds_counter))
                 seconds_counter = 0
                 
                 try:
@@ -675,7 +677,8 @@ class WebinterfaceAPIHandler(APIHandler):
             self.things_to_send = to_send
             
         except Exception as ex:
-            print("error in update_things: " + str(ex))
+            if self.DEBUG:
+                print("error in update_things: " + str(ex))
             
 
 
@@ -701,6 +704,15 @@ class WebinterfaceAPIHandler(APIHandler):
             
             if request.path == '/ajax':
                 
+                if 'token' in request.body:
+                    try:
+                        if len(str(request.body['token'])) > 20:
+                            self.persistent_data['token'] = str(request.body['token'])
+                            
+                    except Exception as ex:
+                        print("Error saving token: " + str(ex))
+                
+                
                 action = str(request.body['action'])    
                 if self.DEBUG:
                     print("ajax action = " + str(action))
@@ -716,6 +728,8 @@ class WebinterfaceAPIHandler(APIHandler):
                         print("things: " + str(self.simple_things))
                         print("allowed things: " + str(self.persistent_data['allowed_things']))
                         #print("self.persistent_data = " + str(self.persistent_data))
+                        
+                    self.update_things()
                         
                     return APIResponse(
                       status=200,
