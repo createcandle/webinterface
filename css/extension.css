@@ -21,7 +21,10 @@
 }
 
 
-
+#extension-webinterface-web-url-button{
+    text-decoration: none;
+    display: inline-block;
+}
 .kiosk #extension-webinterface-web-url-button{
     display:none;
 }
@@ -94,6 +97,14 @@
 #extension-webinterface-qrcode img{
     display:inline-block!important;
 }
+
+#extension-webinterface-qrcode canvas,
+#extension-webinterface-qrcode img{
+    border:4rem solid white;
+    max-width:100%;
+    box-sizing:border-box;
+}
+
 
 
 #extension-webinterface-two-column{

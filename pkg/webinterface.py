@@ -48,9 +48,9 @@ class WebinterfaceAPIHandler(APIHandler):
         self.running = True
 
         self.api_server = 'http://127.0.0.1:8080'
-        self.DEV = True
+        #self.DEV = False
         self.DEBUG = False
-            
+        
         self.poll_interval = 5
         
         self.things = [] # Holds all the things, updated via the API. Used to display a nicer thing name instead of the technical internal ID.
@@ -68,17 +68,15 @@ class WebinterfaceAPIHandler(APIHandler):
         self.simple_things = [] # just name and title, used in bheckboxes UI
         self.things_to_send = [] # only allowed things
             
+        self.should_save_to_persistent = False
+            
         self.get_all_things_counter = 0
             
         self.should_get_all_things_from_api = True # whenever this is set to true, the complete things list is requested from the API. This is a heavy call.
             
         #print(self.user_profile)
             
-        # LOAD CONFIG
-        try:
-            self.add_from_config()
-        except Exception as ex:
-            print("Error loading config: " + str(ex))
+        
 
         #print("self.persistent_data['token'] = " + str(self.persistent_data['token']))
         
@@ -105,28 +103,41 @@ class WebinterfaceAPIHandler(APIHandler):
         if self.DEBUG:
             print("Current working directory: " + str(os.getcwd()))
         
-        
+        self.persistent_data = {"uuid":""}
         first_run = False
         try:
             with open(self.persistence_file_path) as f:
-                self.persistent_data = json.load(f)
-                if self.DEBUG:
-                    print("Persistence data was loaded succesfully.")
+                try:
+                    self.persistent_data = json.load(f)
+                    if self.DEBUG:
+                        print("Persistence data was loaded succesfully.")
+                except Exception as ex:
+                    if self.DEBUG:
+                        print("Error decoding persistent data json: " + str(ex))
                 
-        except:
+                
+        except Exception as ex:
             first_run = True
-            print("Could not load persistent data (if you just installed the add-on then this is normal)")
-            self.persistent_data = {"uuid":"","active":True}
-            self.save_persistent_data()
+            print("Could not load persistent data (if you just installed the add-on then this is normal): " + str(ex))
+            self.persistent_data = {"uuid":""}
+            self.should_save_to_persistent = True
             
             
         if self.DEBUG:
             print("Webinterface self.persistent_data is now: " + str(self.persistent_data))
             
+            
+        # LOAD CONFIG
+        try:
+            self.add_from_config()
+        except Exception as ex:
+            if self.DEBUG:
+                print("Error loading config: " + str(ex))
+                
+            
+        # fix any missing persistent data
         if self.persistent_data['uuid'] == "":
             self.get_new_uuid()
-            
-        
             
         if 'hash' not in self.persistent_data:
             self.persistent_data['hash'] = None
@@ -143,7 +154,7 @@ class WebinterfaceAPIHandler(APIHandler):
             
         if 'enabled' not in self.persistent_data:
             self.persistent_data['enabled'] = False
-            self.save_persistent_data()
+            self.should_save_to_persistent = True
         
         # Intiate extension addon API handler
         try:
@@ -166,7 +177,10 @@ class WebinterfaceAPIHandler(APIHandler):
             #    print("Created new API HANDLER: " + str(manifest['id']))
         
         except Exception as e:
-            print("Failed to init UX extension API handler: " + str(e))
+            if self.DEBUG:
+                print("Failed to init UX extension API handler: " + str(e))
+        
+        
         
         
         # start adapter
@@ -195,7 +209,8 @@ class WebinterfaceAPIHandler(APIHandler):
                     t.daemon = True
                     t.start()
         except:
-            print("Error starting the clock thread")
+            if self.DEBUG:
+                print("Error starting the clock thread")
 
 
 
@@ -225,7 +240,7 @@ class WebinterfaceAPIHandler(APIHandler):
             database = Database(self.addon_name)
             if not database.open():
                 print("Error, could not open settings database")
-                self.close_proxy()
+                #self.close_proxy()
                 return
             
             config = database.load_config()
@@ -240,12 +255,14 @@ class WebinterfaceAPIHandler(APIHandler):
             database.close()
             
         except:
-            print("Error! Failed to open settings database.")
-            self.close_proxy()
+            if self.DEBUG:
+                print("Error! Failed to open settings database.")
+            #self.close_proxy()
             return
         
         if not config:
-            print("Error loading config from database")
+            if self.DEBUG:
+                print("Error loading config from database")
             return
         
         
@@ -277,7 +294,8 @@ class WebinterfaceAPIHandler(APIHandler):
                     if self.DEBUG:
                         print("-Web location was present in the config data: " + str(self.web_url))
         except:
-            print("Error loading web location from settings")
+            if self.DEBUG:
+                print("Error loading web location from settings")
         
         
 
@@ -297,6 +315,15 @@ class WebinterfaceAPIHandler(APIHandler):
         while self.running:
             time.sleep(1)
             #print(".")
+            
+            
+            if self.should_save_to_persistent:
+                if self.DEBUG:
+                    print("clock: should_save_to_persistent was True. Calling save_persistent_data")
+                self.should_save_to_persistent = False
+                self.save_persistent_data()
+            
+            
             seconds_counter += 1
             if self.DEBUG:
                 print("seconds_counter: " + str(seconds_counter))
@@ -347,10 +374,11 @@ class WebinterfaceAPIHandler(APIHandler):
                             if self.DEBUG:
                                 print("/get_time returned: " + str(timejson))
                         except Exception as ex:
-                            print("Clock: error asking server for time: " + str(ex))
-                            print("- url: " + str(self.web_url) + "get_time")
-                            print("- hash: " + str(self.persistent_data['hash']))
-                            print("- uuid: " + str(self.persistent_data['uuid']))
+                            if self.DEBUG:
+                                print("Clock: error asking server for time: " + str(ex))
+                                print("- url: " + str(self.web_url) + "get_time")
+                                print("- hash: " + str(self.persistent_data['hash']))
+                                print("- uuid: " + str(self.persistent_data['uuid']))
                     
                         #print("timejson = " + str(timejson))
                         #print("loading json via loads")
@@ -439,7 +467,8 @@ class WebinterfaceAPIHandler(APIHandler):
                                                             print("Warning: incoming action data did not contain encrypted actions list. No actions to perform yet.")
                                                     
                                         except Exception as ex:
-                                            print("Error getting or handling latest action messages: " + str(ex))
+                                            if self.DEBUG:
+                                                print("Error getting or handling latest action messages: " + str(ex))
                             
                                                 #if self.persistent_data['hash'] == str(action['hash']):
                                                 #    print("GOOD HASH")
@@ -480,7 +509,8 @@ class WebinterfaceAPIHandler(APIHandler):
                                         
                                                 r = requests.post(self.web_url + 'put_things', data={"hash":self.persistent_data['hash'], "uuid":self.persistent_data['uuid'], "time":time.time(), "encrypted":encrypted_string.decode('utf-8') }) # json={"hash":self.persistent_data['hash'],"encrypted": encrypted_string.decode('utf-8')})
                                         except Exception as ex:
-                                            print("Error posting latest things states to web: " + str(ex))
+                                            if self.DEBUG:
+                                                print("Error posting latest things states to web: " + str(ex))
                                         
                                     
                                         
@@ -526,11 +556,13 @@ class WebinterfaceAPIHandler(APIHandler):
                                 r = requests.post(self.web_url + 'delete', data={"hash":self.persistent_data['hash'], "uuid":self.persistent_data['uuid']}) # ask the server to delete all the data (which it does by itself already too, each time the web UI loads data)
                                 self.previous_enabled_state = False
                         except Exception as ex:
-                            print("Clock: error asking server to delete all data: " + str(ex))
+                            if self.DEBUG:
+                                print("Clock: error asking server to delete all data: " + str(ex))
                     
                 
                 except Exception as ex:
-                    print("Clock: error preparing updated things data: " + str(ex))
+                    if self.DEBUG:
+                        print("Clock: error preparing updated things data: " + str(ex))
                         
 
 
@@ -673,7 +705,8 @@ class WebinterfaceAPIHandler(APIHandler):
                             to_send.append(thing)
                 
                 except Exception as ex:
-                    print("error in creating allowed things data: " + str(ex))
+                    if self.DEBUG:
+                        print("error in creating allowed things data: " + str(ex))
             self.things_to_send = to_send
             
         except Exception as ex:
@@ -710,7 +743,8 @@ class WebinterfaceAPIHandler(APIHandler):
                             self.persistent_data['token'] = str(request.body['token'])
                             
                     except Exception as ex:
-                        print("Error saving token: " + str(ex))
+                        if self.DEBUG:
+                            print("Error saving token: " + str(ex))
                 
                 
                 action = str(request.body['action'])    
@@ -772,11 +806,12 @@ class WebinterfaceAPIHandler(APIHandler):
                     try:
                         if len(str(request.body['token'])) > 20:
                             self.persistent_data['token'] = str(request.body['token'])
-                            self.save_persistent_data()
+                            self.should_save_to_persistent = True
                             state = True
                             
                     except Exception as ex:
-                        print("Error saving token: " + str(ex))
+                        if self.DEBUG:
+                            print("Error saving token: " + str(ex))
                     
                     return APIResponse(
                       status=200,
@@ -802,11 +837,12 @@ class WebinterfaceAPIHandler(APIHandler):
                         self.persistent_data['password'] = str(request.body['password'])
                         
                     except Exception as ex:
-                        print("Error saving password in secure storage: " + str(ex))
+                        if self.DEBUG:
+                            print("Error saving password in secure storage: " + str(ex))
                     
                     #self.persistent_data['hash'] = str(request.body['hash']) # if the browser UI generates the hash, it might improve cmopatibiity, since the same libraries will be used.
                     self.persistent_data['hash'] = str( hashlib.sha512( bytes(self.persistent_data['password'], 'utf-8') ).hexdigest() )
-                    self.save_persistent_data()
+                    self.should_save_to_persistent = True
                     
                     return APIResponse(
                       status=200,
@@ -828,7 +864,7 @@ class WebinterfaceAPIHandler(APIHandler):
                         print('ajax handling save_allowed')
                     if 'allowed_things' in request.body:
                         self.persistent_data['allowed_things'] = request.body['allowed_things']
-                        self.save_persistent_data()
+                        self.should_save_to_persistent = True
                     else:
                         state = False
                         
@@ -850,11 +886,12 @@ class WebinterfaceAPIHandler(APIHandler):
                         if 'enabled' in request.body:
                             self.adapter.devices['webinterface'].properties["outside-access"].update(bool(request.body['enabled']))
                             self.persistent_data['enabled'] = request.body['enabled']
-                            self.save_persistent_data()
+                            self.should_save_to_persistent = True
                         else:
                             state = False
                     except Exception as ex:
-                        print("Error setting outside access state: " + str(ex))
+                        if self.DEBUG:
+                            print("Error setting outside access state: " + str(ex))
                         state = False
                         
                     return APIResponse(
@@ -876,7 +913,8 @@ class WebinterfaceAPIHandler(APIHandler):
                 return APIResponse(status=404)
                 
         except Exception as e:
-            print("Failed to handle UX extension API request: " + str(e))
+            if self.DEBUG:
+                print("Failed to handle UX extension API request: " + str(e))
             return APIResponse(
               status=500,
               content_type='application/json',
@@ -959,14 +997,16 @@ class WebinterfaceAPIHandler(APIHandler):
                             return to_return
                                 
                 except Exception as ex:
-                    print("api_get_fix error: " + str(ex))
+                    if self.DEBUG:
+                        print("api_get_fix error: " + str(ex))
                         
                 #if self.DEBUG:
                 #    print("returning without 1.1.0 fix: " + str(r.text))
                 return json.loads(r.text)
             
         except Exception as ex:
-            print("Error doing http request/loading returned json: " + str(ex))
+            if self.DEBUG:
+                print("Error doing http request/loading returned json: " + str(ex))
             
             #return [] # or should this be {} ? Depends on the call perhaps.
             return {"error": 500}
@@ -1038,7 +1078,8 @@ class WebinterfaceAPIHandler(APIHandler):
                 return return_value
 
         except Exception as ex:
-            print("Error doing http request/loading returned json: " + str(ex))
+            if self.DEBUG:
+                print("Error doing http request/loading returned json: " + str(ex))
             
             #return {"error": "I could not connect to the web things gateway"}
             #return [] # or should this be {} ? Depends on the call perhaps.
@@ -1052,7 +1093,6 @@ class WebinterfaceAPIHandler(APIHandler):
 #
 
     def save_persistent_data(self):
-        #if self.DEBUG:
         if self.DEBUG:
             print("Saving to persistence data store at path: " + str(self.persistence_file_path))
             
@@ -1073,7 +1113,8 @@ class WebinterfaceAPIHandler(APIHandler):
                 return True
 
         except Exception as ex:
-            print("Error: could not store data in persistent store: " + str(ex) )
+            if self.DEBUG:
+                print("Error: could not store data in persistent store: " + str(ex) )
             return False
 
 
@@ -1136,7 +1177,8 @@ class WebinterfaceAdapter(Adapter):
             self.handle_device_removed(obj)                     # Remove from device dictionary
 
         except Exception as ex:
-            print("Could not remove thing from Webinterface adapter devices: " + str(ex))
+            if self.DEBUG:
+                print("Could not remove thing from Webinterface adapter devices: " + str(ex))
         
 
     def cancel_pairing(self):

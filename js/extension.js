@@ -325,7 +325,7 @@
                                         //var station_name = "Error";
                                         //var stream_url = "Error";
                                         var container = checkbox = document.createElement('div');
-                                        container.classList.add('extension-webinterface-item')
+                                        container.classList.add('extension-webinterface-item');
                         
                                         var checkbox = document.createElement('input');
                                         checkbox.type = "checkbox";
@@ -358,7 +358,6 @@
                                 if(typeof body.allowed_things != 'undefined'){
                                     //console.log("body.allowed_things: ", body.allowed_things);
                                     // If no devices are allowed to be controller, show a warning in the first tab
-                                    console.log("body.allowed_things.length: ", body.allowed_things.length);
                                     if(body.allowed_things.length == 0){
                                         document.getElementById('extension-webinterface-tip-things').style.display = 'block';
                                     }else{
