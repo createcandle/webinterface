@@ -326,11 +326,11 @@ class WebinterfaceAPIHandler(APIHandler):
                 
             
             seconds_counter += 1
-            if self.DEBUG:
-                print("seconds_counter: " + str(seconds_counter))
+            #if self.DEBUG:
+            #    print("seconds_counter: " + str(seconds_counter))
             if seconds_counter >= self.poll_interval:
-                if self.DEBUG:
-                    print("seconds passed: " + str(seconds_counter))
+                #if self.DEBUG:
+                #    print("seconds passed: " + str(seconds_counter))
                 seconds_counter = 0
                 
                 try:
@@ -807,7 +807,7 @@ class WebinterfaceAPIHandler(APIHandler):
                     try:
                         if len(str(request.body['token'])) > 20:
                             
-                            if self.persistent_data['token'] != str(request.body['token'])
+                            if self.persistent_data['token'] != str(request.body['token']):
                                 self.persistent_data['token'] = str(request.body['token'])
                                 self.update_things()
                                 self.should_save_to_persistent = True
