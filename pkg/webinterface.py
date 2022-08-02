@@ -205,9 +205,9 @@ class WebinterfaceAPIHandler(APIHandler):
                 if len(self.persistent_data['token']) > 10:
                     self.update_things() 
                       
-                    t = threading.Thread(target=self.clock)
-                    t.daemon = True
-                    t.start()
+            t = threading.Thread(target=self.clock)
+            t.daemon = True
+            t.start()
         except:
             if self.DEBUG:
                 print("Error starting the clock thread")
@@ -320,9 +320,10 @@ class WebinterfaceAPIHandler(APIHandler):
             if self.should_save_to_persistent:
                 if self.DEBUG:
                     print("clock: should_save_to_persistent was True. Calling save_persistent_data")
-                self.should_save_to_persistent = False
+                
                 self.save_persistent_data()
-            
+                self.should_save_to_persistent = False
+                
             
             seconds_counter += 1
             if self.DEBUG:
@@ -805,8 +806,12 @@ class WebinterfaceAPIHandler(APIHandler):
                     #self.persistent_data['password'] = str(request.body['password'])
                     try:
                         if len(str(request.body['token'])) > 20:
-                            self.persistent_data['token'] = str(request.body['token'])
-                            self.should_save_to_persistent = True
+                            
+                            if self.persistent_data['token'] != str(request.body['token'])
+                                self.persistent_data['token'] = str(request.body['token'])
+                                self.update_things()
+                                self.should_save_to_persistent = True
+                                
                             state = True
                             
                     except Exception as ex:
@@ -864,6 +869,8 @@ class WebinterfaceAPIHandler(APIHandler):
                         print('ajax handling save_allowed')
                     if 'allowed_things' in request.body:
                         self.persistent_data['allowed_things'] = request.body['allowed_things']
+                        if self.DEBUG:
+                            print('setting self.should_save_to_persistent to True')
                         self.should_save_to_persistent = True
                     else:
                         state = False
