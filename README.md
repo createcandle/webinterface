@@ -39,19 +39,23 @@ This addon has a strong focus on privacy.
 - Only allows control over things. Does not support creating rules, checking logs, or any such other features of the Gateway. 
 
 
-## Installation & Getting started
+## Installation
+
+Simply install the addon using the Candle store.
+
+
+## Manual inntallation
 
 - Place the files from the `webserver` folder in a location on your PHP webserver.
 - Change the filename of the `htaccess` file into `.htaccess` (adding the first dot).
 - Install the addon (use the SeaShell addon and run this command: `git clone https://github.com/flatsiedatsie/webinterface.git /home/pi/.webthings/addons/`)
 - Install the dependencies (use the SeaShell addon and run this command: `sudo chmod +x /home/pi/.webthings/addons/webinterface/package.sh` and then this command: `/home/pi/.webthings/addons/webinterface/package.sh`)
 - Wait about 15 minutes for everything to install and then reboot. The addon should now appear under settings.
-- In the addon settings, add an authorization token. This token can be generated under Settings -> Developer in your Webthings Gateway.
 - In the addon settings, set a password . You will have to enter the same password in the web interface.
 - In the addon settings, provide the URL where the PHP files are located. E.g. https://www.candlesmarthome.com/webinterface/
 - Enable the addon
 
-Now you can visit the webserver. Enter the password, and within about 10 seconds the data should appear.
+Now you can visit the webserver (https://www.candlesmarthome.com/web). Enter the password, and within about 30 seconds the data should appear.
 
 
 ## Thanks to
