@@ -20,7 +20,7 @@ try:
     from gateway_addon import APIHandler, APIResponse, Adapter, Device, Property, Database
     #print("succesfully loaded APIHandler and APIResponse from gateway_addon")
 except:
-    print("Import APIHandler and APIResponse from gateway_addon failed. Use at least WebThings Gateway version 0.10")
+    print("Import APIHandler and APIResponse from gateway_addon failed. Use at least controller version 0.10")
     sys.exit(1)
 
 
@@ -843,11 +843,13 @@ class WebinterfaceAPIHandler(APIHandler):
                         
                     except Exception as ex:
                         if self.DEBUG:
-                            print("Error saving password in secure storage: " + str(ex))
+                            print("Error adding password to secure storage: " + str(ex))
                     
                     #self.persistent_data['hash'] = str(request.body['hash']) # if the browser UI generates the hash, it might improve cmopatibiity, since the same libraries will be used.
-                    self.persistent_data['hash'] = str( hashlib.sha512( bytes(self.persistent_data['password'], 'utf-8') ).hexdigest() )
-                    self.should_save_to_persistent = True
+                    hashed = str( hashlib.sha512( bytes(self.persistent_data['password'], 'utf-8') ).hexdigest() )
+                    if self.persistent_data['hash'] != hashed:
+                        self.persistent_data['hash'] = hashed
+                        self.should_save_to_persistent = True
                     
                     return APIResponse(
                       status=200,
@@ -958,7 +960,7 @@ class WebinterfaceAPIHandler(APIHandler):
 #
 
     def api_get(self, api_path,intent='default'):
-        """Returns data from the WebThings Gateway API."""
+        """Returns data from the controller API."""
         #if self.DEBUG:
         #    print("GET PATH = " + str(api_path))
             #print("intent in api_get: " + str(intent))
@@ -985,8 +987,8 @@ class WebinterfaceAPIHandler(APIHandler):
             else:
                 to_return = r.text
                 try:
-                    #if self.DEBUG:
-                    #    print("api_get: received: " + str(r))
+                    if self.DEBUG:
+                        print("api_get: received: " + str(r))
                     #for prop_name in r:
                     #    print(" -> " + str(prop_name))
                     if not '{' in r.text:
@@ -994,8 +996,8 @@ class WebinterfaceAPIHandler(APIHandler):
                         #    print("api_get: response was not json (gateway 1.1.0 does that). Turning into json...")
                         
                         if 'things/' in api_path and '/properties/' in api_path:
-                            #if self.DEBUG:
-                            #    print("properties was in api path: " + str(api_path))
+                            if self.DEBUG:
+                                print("properties was in api path: " + str(api_path))
                             likely_property_name = api_path.rsplit('/', 1)[-1]
                             to_return = {}
                             to_return[ likely_property_name ] = json.loads(r.text)
@@ -1021,7 +1023,7 @@ class WebinterfaceAPIHandler(APIHandler):
 
 
     def api_put(self, api_path, json_dict, intent='default'):
-        """Sends data to the WebThings Gateway API."""
+        """Sends data to the API."""
         
         try:
         

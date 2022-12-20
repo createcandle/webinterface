@@ -145,7 +145,7 @@
                 return
             }
             
-            if(password1.startsWith('12345')){
+            if(password1.startsWith('12345') || password1.startsWith('qwert')){
                 alert("Oh come one, that's not secure");
                 return
             }
@@ -184,45 +184,11 @@
       		
         });
         
-        
+        /*
         document.getElementById('extension-webinterface-thing-list-save-button').addEventListener('click', (event) => {
-            //console.log('save');
-            var checkboxes = document.querySelectorAll('#extension-webinterface-thing-list input');
-            
-            document.getElementById('extension-webinterface-thing-list-save-button').style.display = 'none';
-            
-            if(checkboxes.length > 0){
-                var allowed_things = [];
-                for (var t=0; t < checkboxes.length; t++) {
-                    if(checkboxes[t].checked){
-                        allowed_things.push(checkboxes[t].value);
-                    }
-                }
-                //console.log("allowed_things: ", allowed_things);
-                
-                window.API.postJson(
-                  `/extensions/${this.id}/api/ajax`,
-        					    {'action':'save_allowed', 'allowed_things':allowed_things}
-
-                ).then((body) => {
-        			//console.log("Python API result:");
-        			//console.log(body);
-                    document.getElementById('extension-webinterface-thing-list-save-button').style.display = 'block';
-                    document.getElementById('extension-webinterface-tip-things').style.display = 'none';
-                }).catch((e) => {
-                  	//pre.innerText = e.toString();
-          			console.log("webinterface: error saving: ", e);
-          			//console.log(e.toString());
-                    alert("Could not save. Connection error?");
-                    document.getElementById('extension-webinterface-thing-list-save-button').style.display = 'block';
-                });	
-                
-            }
-            else{
-                //console.log('no checkboxes in the list container?');
-            }
-            
+            this.save_things_list();  
         });
+        */
         
         this.update_data('init');
 
@@ -230,6 +196,47 @@
 
 	}
 	
+    
+    
+    save_things_list(){
+        console.log('saving things list');
+        var checkboxes = document.querySelectorAll('#extension-webinterface-thing-list input');
+        
+        document.getElementById('extension-webinterface-thing-list-save-button').style.display = 'none';
+        
+        if(checkboxes.length > 0){
+            var allowed_things = [];
+            for (var t=0; t < checkboxes.length; t++) {
+                if(checkboxes[t].checked){
+                    allowed_things.push(checkboxes[t].value);
+                }
+            }
+            //console.log("allowed_things: ", allowed_things);
+            
+            window.API.postJson(
+              `/extensions/${this.id}/api/ajax`,
+    					    {'action':'save_allowed', 'allowed_things':allowed_things}
+
+            ).then((body) => {
+    			//console.log("Python API result:");
+    			//console.log(body);
+                document.getElementById('extension-webinterface-thing-list-save-button').style.display = 'block';
+                document.getElementById('extension-webinterface-tip-things').style.display = 'none';
+            }).catch((e) => {
+              	//pre.innerText = e.toString();
+      			console.log("webinterface: error saving: ", e);
+      			//console.log(e.toString());
+                alert("Could not save. Connection error?");
+                document.getElementById('extension-webinterface-thing-list-save-button').style.display = 'block';
+            });	
+            
+        }
+        else{
+            //console.log('no checkboxes in the list container?');
+        }
+    }
+    
+    
     
     
 	update_data(action){
@@ -312,7 +319,7 @@
                             else{
                                 thing_list.innerHTML = "";
                     
-                                body.things.sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase()) ? 1 : -1) // sort alphabetically
+                                body.things.sort((a, b) => (a.title.toLowerCase() > b.title.toLowerCase()) ? 1 : -1) // sort alphabetically
                     
                 				// Loop over all items
                 				for( var index in body.things ){
@@ -322,11 +329,12 @@
                     					//var clone = original.cloneNode(true);
                     					//clone.removeAttribute('id');
                     
-                                        //var station_name = "Error";
-                                        //var stream_url = "Error";
+                                        // Container
                                         var container = checkbox = document.createElement('div');
                                         container.classList.add('extension-webinterface-item');
                         
+                        
+                                        // Checkbox
                                         var checkbox = document.createElement('input');
                                         checkbox.type = "checkbox";
                                         checkbox.name = item.name;
@@ -338,6 +346,12 @@
                                                 checkbox.checked = true;
                                             }
                                         }
+                                        checkbox.addEventListener('change', (event) => {
+                                            console.log("checkbox changed. Saving things list."); 
+                                            this.save_things_list();
+                                        });
+                                        
+                                        // Label
                                         var label = document.createElement('label');
                                         label.htmlFor = item.name;
                                         //label.appendChild(checkbox);
