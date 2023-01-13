@@ -754,9 +754,9 @@ class WebinterfaceAPIHandler(APIHandler):
                         #if self.DEBUG:
                         #    print("property: " + str(thing['properties'][prop]))
                         
-                        if 'value' in thing['properties'][prop]:
-                            if self.DEBUG:
-                                print("value was already present in this property, but is pobably outdated. It was: " + str(thing['properties'][prop]['value']))
+                        #if 'value' in thing['properties'][prop]:
+                            #if self.DEBUG:
+                            #    print("value was already present in this property, but is probably outdated. It was: " + str(thing['properties'][prop]['value']))
                             
                         using_forms = False       
                         if 'forms' in thing['properties'][prop]:
@@ -785,8 +785,8 @@ class WebinterfaceAPIHandler(APIHandler):
                             if self.DEBUG:
                                 print("update_things: property href = " + str(href))
                             prop_val = self.api_get(href)
-                            if self.DEBUG:
-                                print("update_things: API returned prop_val: " + str(prop_val))
+                            #if self.DEBUG:
+                            #    print("update_things: API returned prop_val: " + str(prop_val))
                             for key in prop_val:
                                 if key != 'error':
                                     
