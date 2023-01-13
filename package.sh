@@ -39,7 +39,7 @@ cd -
 
 # Make the tarball
 echo "creating archive"
-TARFILE="webinterface-${version}.tgz"
+TARFILE="webinterface-${version}${TARFILE_SUFFIX}.tgz"
 tar czf ${TARFILE} package
 
 shasum --algorithm 256 ${TARFILE} > ${TARFILE}.sha256sum
