@@ -1,3 +1,2 @@
 requests
-aes-everywhere
-pycryptodomex
+aes-everywhery
