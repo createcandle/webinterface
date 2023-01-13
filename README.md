@@ -8,7 +8,7 @@ This is an alternative way to control your Candle Controller from outside of you
 
 This addon has two parts:
 - The actual addon for the Candle Controller.
-- A collection of PHP files that you place on a webserver of your choice. Alternatively, you can use the Candle webserver.
+- A collection of PHP files that you place on a webserver of your choice. Alternatively, you can use the Candle webserver. The code for this part is currently not openly available for security reasons. Yes, security through obscurity is frowned upon.
 
 The addon continously polls the webserver to see if someone (who has entered the correct password) is currently using it.
 When you are logged into the web interface, and you enter the correct password, the addon will upload encrpyted data about your things to the PHP server, from where the web interface will then download it, decrypt it, and display your things.
