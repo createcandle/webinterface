@@ -31,6 +31,7 @@
         })
         .catch((e) => console.error('Failed to fetch content:', e));
         
+            
     }
 
 
@@ -44,18 +45,9 @@
 			this.view.innerHTML = this.content;
 		}	
 		
-	  	
-
-		const pre = document.getElementById('extension-webinterface-response-data');
-		//const original = document.getElementById('extension-webinterface-original-item');
-		//const list = document.getElementById('extension-webinterface-list');
 		const view = document.getElementById('extension-webinterface-view'); 
 		
 		const leader_dropdown = document.querySelectorAll(' #extension-webinterface-view #extension-webinterface-original-item .extension-webinterface-thing1')[0];
-		//const webinterface_dropdown = document.querySelectorAll(' #extension-webinterface-view #extension-webinterface-original-item .extension-webinterface-thing2')[0];
-	
-    
-    
     
         var all_tabs = document.querySelectorAll('.extension-webinterface-tab');
         var all_tab_buttons = document.querySelectorAll('.extension-webinterface-main-tab-button');
@@ -97,18 +89,11 @@
     			}
 
             }).catch((e) => {
-              	//pre.innerText = e.toString();
-      			//console.log("webinterface: error in calling save via API handler");
-      			//console.log(e.toString());
-    			alert("Error: unable to save setting. Connection error?")
+                console.log("connection error changing outside access: ", e);
+    			alert("Error: unable to save setting. Connection error?");
             });	
             
-        });
-       
-        
-    
-		pre.innerText = "";
-        
+        });    
         
         // New UUID
 		document.getElementById('extension-webinterface-new-uuid-button').addEventListener('click', (event) => {
@@ -131,55 +116,97 @@
             //var target = event.currentTarget;
 			//var parent3 = target.parentElement.parentElement.parentElement; //parent of "target"
 			//parent3.classList.add("delete");
+            try{
+                const password1 = document.getElementById('extension-webinterface-password1').value;
+                const password2 = document.getElementById('extension-webinterface-password2').value;
             
-            const password1 = document.getElementById('extension-webinterface-password1').value;
-            const password2 = document.getElementById('extension-webinterface-password2').value;
+                if(password1 != password2){
+                    //alert("The passwords did not match");
+                    document.getElementById('extension-webinterface-tip-password-failed').innerText = "The passwords did not match";
+                    document.getElementById('extension-webinterface-tip-password-failed').style.display = 'block';
+                    setTimeout(function(){
+                        document.getElementById('extension-webinterface-tip-password-failed').style.display = 'none';
+                    }, 4000);
+                    return
+                }
             
-            if(password1 != password2){
-                alert("The passwords did not match");
-                return
-            }
+                if(password1.length < 8){
+                    //alert("The passwords needs to be at least 8 characters long");
+                    document.getElementById('extension-webinterface-tip-password-failed').innerText = "The passwords needs to be at least 8 characters";
+                    document.getElementById('extension-webinterface-tip-password-failed').style.display = 'block';
+                    setTimeout(function(){
+                        document.getElementById('extension-webinterface-tip-password-failed').style.display = 'none';
+                    }, 4000);
+                    return
+                }
             
-            if(password1.length < 8){
-                alert("The passwords needs to be at least 8 characters long");
-                return
-            }
+                if(password1.startsWith('12345') || password1.startsWith('qwert')){
+                    //alert("Oh come one, that's not secure");
+                    document.getElementById('extension-webinterface-tip-password-failed').innerText = "Oh come one, that's not secure";
+                    document.getElementById('extension-webinterface-tip-password-failed').style.display = 'block';
+                    setTimeout(function(){
+                        document.getElementById('extension-webinterface-tip-password-failed').style.display = 'none';
+                    }, 4000);
+                    return
+                }
             
-            if(password1.startsWith('12345') || password1.startsWith('qwert')){
-                alert("Oh come one, that's not secure");
-                return
-            }
-            
-            if (confirm('Are you sure you want to change the password?')){
+                if (confirm('Are you sure you want to change the password?')){
           		
-                //const hash = CryptoJS.SHA512(password1).toString(CryptoJS.enc.Hex);
+                    //const hash = CryptoJS.SHA512(password1).toString(CryptoJS.enc.Hex);
                 
-                
-                window.API.postJson(
-                  `/extensions/${this.id}/api/ajax`,
-                    {'action':'save_hash', 'password':password1} //  'hash':hash,
-
-                ).then((body) => {
-        			//console.log("Python API result:");
-        			//console.log(body);
+                    function sha512(str) {
+                        return CryptoJS.SHA512(str).toString(CryptoJS.enc.Hex);
+                    }
                     
-        			if(body['state'] == true){
-                        document.getElementById('extension-webinterface-tip-password').style.display = 'none';
-                        alert("The password was saved");
-        			}
-        			else{
-        				//console.log("not ok response while getting data");
-        				alert("Error: could not save password");
-        			}
+                    const hash1 = sha512(password1);
+                    
+                    const hash2_round1 = sha512("candle" + password1);
+                    const hash2 = sha512(hash2_round1); 
+                    //console.log("hash2: ", hash2);
+                    
+                    window.API.postJson(
+                      `/extensions/${this.id}/api/ajax`,
+                        {'action':'save_hash', 'hash':hash1, 'hash2':hash2}
 
-                }).catch((e) => {
-                  	//pre.innerText = e.toString();
-          			//console.log("webinterface: error in calling save via API handler");
-          			//console.log(e.toString());
-                    console.log("Saving the password failed - connection error");
-                    alert("Connection error, could not save passwordd");
-                });	
+                    ).then((body) => {
+            			//console.log("Python API result:");
+            			//console.log(body);
+                    
+            			if(body['state'] == true){
+                            document.getElementById('extension-webinterface-tip-password').style.display = 'none';
+                            document.getElementById('extension-webinterface-tip-password-saved').style.display = 'block';
+                            setTimeout(function(){
+                                document.getElementById('extension-webinterface-tip-password-saved').style.display = 'none';
+                            }, 4000);
+                            //alert("The password was saved");
+            			}
+            			else{
+                            document.getElementById('extension-webinterface-tip-password-failed').innerText = "Could not save password";
+                            document.getElementById('extension-webinterface-tip-password-failed').style.display = 'block';
+                            setTimeout(function(){
+                                document.getElementById('extension-webinterface-tip-password-failed').style.display = 'none';
+                            }, 4000);
+            				//console.log("not ok response while getting data");
+            				//alert("Error: could not save password");
+            			}
+
+                    }).catch((e) => {
+                      	//pre.innerText = e.toString();
+              			//console.log("webinterface: error in calling save via API handler");
+              			//console.log(e.toString());
+                        console.log("Saving the password failed - connection error");
+                        //alert("Connection error, could not save password");
+                        document.getElementById('extension-webinterface-tip-password-failed').innerText = "Connection error";
+                        document.getElementById('extension-webinterface-tip-password-failed').style.display = 'block';
+                        setTimeout(function(){
+                            document.getElementById('extension-webinterface-tip-password-failed').style.display = 'none';
+                        }, 4000);
+                    });	
                 
+                }
+            }
+            catch(e){
+                console.error("Error saving password: ", e);
             }
       		
         });
@@ -202,7 +229,7 @@
         console.log('saving things list');
         var checkboxes = document.querySelectorAll('#extension-webinterface-thing-list input');
         
-        document.getElementById('extension-webinterface-thing-list-save-button').style.display = 'none';
+        //document.getElementById('extension-webinterface-thing-list-save-button').style.display = 'none';
         
         if(checkboxes.length > 0){
             var allowed_things = [];
@@ -220,14 +247,14 @@
             ).then((body) => {
     			//console.log("Python API result:");
     			//console.log(body);
-                document.getElementById('extension-webinterface-thing-list-save-button').style.display = 'block';
+                //document.getElementById('extension-webinterface-thing-list-save-button').style.display = 'block';
                 document.getElementById('extension-webinterface-tip-things').style.display = 'none';
             }).catch((e) => {
               	//pre.innerText = e.toString();
       			console.log("webinterface: error saving: ", e);
       			//console.log(e.toString());
                 alert("Could not save. Connection error?");
-                document.getElementById('extension-webinterface-thing-list-save-button').style.display = 'block';
+                //document.getElementById('extension-webinterface-thing-list-save-button').style.display = 'block';
             });	
             
         }
@@ -235,8 +262,6 @@
             //console.log('no checkboxes in the list container?');
         }
     }
-    
-    
     
     
 	update_data(action){
@@ -254,7 +279,7 @@
 			//console.log(body);
 
             if(typeof body['debug'] != 'undefined'){
-                this.debug = body['debug']
+                this.debug = body['debug'];
             }
 
             if(this.debug){
@@ -263,7 +288,10 @@
 
             if(typeof body['state'] != 'undefined'){
     			if(body['state'] == true){
-    				this.persistent_data = body;
+    				
+                    //if(typeof body['persistent_data'] != 'undefined'){
+                    //    this.persistent_data = body;
+                    //}
     				//this.regenerate_items();
                 
                     if(typeof body['web_url'] != 'undefined' && typeof body['uuid'] != 'undefined'){
@@ -273,16 +301,30 @@
                         document.getElementById('extension-webinterface-web-url').innerText = body['web_url'];
                         document.getElementById('extension-webinterface-web-url-button').href = qr_url;
                 
-                
-                
                         const target_element = document.getElementById('extension-webinterface-qrcode');
             	
-
                 	    var qrcode = new QRCode(target_element, {
                 		    width : 300,
                 		    height : 300
                 	    });
                 	    qrcode.makeCode(qr_url);
+                    }
+                    
+                    if(typeof body.hash_present != 'undefined'){
+                        if(this.debug){
+                            console.log("body.hash_present: ", body.hash_present);
+                        }
+                        if(document.getElementById('extension-webinterface-tip-password') != null){
+                            //console.log("body.hash: ", body.hash);
+                            if(body.hash_present){
+                                document.getElementById('extension-webinterface-tip-password').style.display = 'none';
+                                document.getElementById('extension-webinterface-save-password').innerText = "Change password";
+                            }else{
+                                //console.log("no password set yet");
+                                document.getElementById('extension-webinterface-tip-password').style.display = 'block';
+                            }
+                        }
+                    
                     }
                 
                     // /init
@@ -292,23 +334,7 @@
                         if(typeof body.enabled != 'undefined'){
                             document.getElementById('extension-webinterface-outside-access').checked = body.enabled;
                         }
-                    
-                        if(typeof body.hash != 'undefined'){
                         
-                            if(document.getElementById('extension-webinterface-tip-password') != null){
-                                //console.log("body.hash: ", body.hash);
-                                if(body.hash == null){
-                                    //console.log("no password set yet");
-                                    document.getElementById('extension-webinterface-tip-password').style.display = 'block';
-                                }else{
-                                    document.getElementById('extension-webinterface-tip-password').style.display = 'none';
-                                }
-                            }
-                        
-                        }
-                    
-                    
-                    
                         const thing_list = document.getElementById('extension-webinterface-thing-list');
                     
                         if(typeof body.things != 'undefined'){
@@ -320,7 +346,9 @@
                                 thing_list.innerHTML = "";
                     
                                 body.things.sort((a, b) => (a.title.toLowerCase() > b.title.toLowerCase()) ? 1 : -1) // sort alphabetically
-                    
+                                
+                                //console.log("MAKING LIST");
+                                //console.log(" body.allowed_things: ", body.allowed_things);
                 				// Loop over all items
                 				for( var index in body.things ){
             					    try{
@@ -337,23 +365,28 @@
                                         // Checkbox
                                         var checkbox = document.createElement('input');
                                         checkbox.type = "checkbox";
-                                        checkbox.name = item.name;
-                                        checkbox.id = item.name;
-                                        checkbox.value = item.name;
+                                        checkbox.name = item.id;
+                                        checkbox.id = item.id;
+                                        checkbox.value = item.id;
                                         //checkbox.id = "id";
                                         if(typeof body.allowed_things != 'undefined'){
-                                            if( body.allowed_things.indexOf(item.name) > -1){
+                                            if( body.allowed_things.indexOf(item.id) > -1){
                                                 checkbox.checked = true;
                                             }
                                         }
+                                        else{
+                                            console.log("webinterface: Error, body.allowed_things is undefined");
+                                        }
                                         checkbox.addEventListener('change', (event) => {
-                                            console.log("checkbox changed. Saving things list."); 
+                                            if(this.debug){
+                                                console.log("webinterface: update_data: checkbox changed. Saving things list."); 
+                                            }
                                             this.save_things_list();
                                         });
                                         
                                         // Label
                                         var label = document.createElement('label');
-                                        label.htmlFor = item.name;
+                                        label.htmlFor = item.id;
                                         //label.appendChild(checkbox);
                                         label.appendChild(document.createTextNode(item.title));
                             
@@ -367,7 +400,12 @@
                                     }
                             
                                 }
-                                document.getElementById('extension-webinterface-thing-list-button-container').style.display = 'block';
+                                /*
+                                // save button is no longer needed
+                                if(document.getElementById('extension-webinterface-thing-list-button-container') != null){
+                                    document.getElementById('extension-webinterface-thing-list-button-container').style.display = 'block';
+                                }
+                                */
                         
                                 if(typeof body.allowed_things != 'undefined'){
                                     //console.log("body.allowed_things: ", body.allowed_things);
@@ -378,6 +416,11 @@
                                         document.getElementById('extension-webinterface-tip-things').style.display = 'none';
                                     }
                                 }
+                                else{
+                                    if(this.debug){
+                                        console.warn("webinterface: update_data: body.allowed_things was undefined");
+                                    }
+                                }
                             
                             }
                         }
@@ -385,7 +428,12 @@
                     
                 
                     }
-                
+                    else if(action == 'save_hash'){
+                        if(this.debug){
+                            console.log("password hash saved");
+                        }
+                        
+                    }
                 
                 
     			}
@@ -402,9 +450,14 @@
   			//console.log(e.toString());
 			console.log("WebInterface: Loading items failed - connection error: ", e);
         });	
+        
+        
+        
+        
 	}
 	
 
+    
 
 
 

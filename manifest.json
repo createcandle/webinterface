@@ -7,11 +7,14 @@
       ],
       "js": [
         "js/extension.js",
-        "js/qrcode.js"
+        "js/qrcode.js",
+		"js/lodash.min.js",
+		"js/crypto-js.min.js",
+		"js/aes256.js"
       ]
     }
   ],
-  "description": "Control to your things from the internet. Encrypted, privacy friendly, and open source.",
+  "description": "Control to your things from the internet.",
   "gateway_specific_settings": {
     "webthings": {
       "exec": "python3 {path}/main.py",
@@ -51,7 +54,7 @@
     }
   },
   "short_name": "webinterface",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "web_accessible_resources": [
     "css/*.css",
     "images/*.svg",

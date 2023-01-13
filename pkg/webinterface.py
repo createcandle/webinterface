@@ -1,6 +1,19 @@
 """Webinterface API handler."""
 
 
+
+# The first hash works as a password. The same hash is generated from the input password at the wen end too. 
+# It is used for for encrypting and decrypting.
+
+# The hash of that hash ("second hash") is transmitted to the proxy by both the addon and the web UI. 
+# The proxy only exchanges messages with both parties have the same user ID and the same second hash - 
+# indicating they both know the same original password.
+
+# This construction means the actual password doesn't have to be stored on the system, only its hash.
+# 
+# The proxy server is the neutra; timekeeper. It's timestamp is used to see if the outside request was a recent one. 
+# This avoids issues with the javascript int the browser not giving a universal time.
+
 import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'lib'))
@@ -50,6 +63,7 @@ class WebinterfaceAPIHandler(APIHandler):
         self.api_server = 'http://127.0.0.1:8080'
         #self.DEV = False
         self.DEBUG = False
+        self.DEBUG2 = False # enable to see continuously running output messages too. Can spam the logs.
         
         self.poll_interval = 5
         
@@ -63,7 +77,7 @@ class WebinterfaceAPIHandler(APIHandler):
         self.previous_enabled_state = False
         self.last_activity_time = 0
         self.last_active_state = False
-        self.previous_full_things = {}
+        #self.previous_full_things = {}
         self.persistent_data = {'ready':False, 'allowed_things':[]}
         self.simple_things = [] # just name and title, used in bheckboxes UI
         self.things_to_send = [] # only allowed things
@@ -71,8 +85,10 @@ class WebinterfaceAPIHandler(APIHandler):
         self.should_save_to_persistent = False
             
         self.get_all_things_counter = 0
+        self.update_things_busy = False
             
         self.should_get_all_things_from_api = True # whenever this is set to true, the complete things list is requested from the API. This is a heavy call.
+        self.last_clock_poll_time = 0 # the last timestamp at which the clock started to query the proxy
             
         #print(self.user_profile)
             
@@ -139,18 +155,21 @@ class WebinterfaceAPIHandler(APIHandler):
         if self.persistent_data['uuid'] == "":
             self.get_new_uuid()
             
+        
+            
+        if 'token' not in self.persistent_data:
+            self.persistent_data['token'] = None
+                    
         if 'hash' not in self.persistent_data:
             self.persistent_data['hash'] = None
             self.missing_hash = True
             
-        if 'token' not in self.persistent_data:
-            self.persistent_data['token'] = None
+        if 'hash2' not in self.persistent_data:
+            self.persistent_data['hash2'] = ""
+            self.should_save_to_persistent = True
             
         if 'allowed_things' not in self.persistent_data:
             self.persistent_data['allowed_things'] = []
-        
-        if 'hash' not in self.persistent_data:
-            self.persistent_data['hash'] = ""
             
         if 'enabled' not in self.persistent_data:
             self.persistent_data['enabled'] = False
@@ -203,6 +222,8 @@ class WebinterfaceAPIHandler(APIHandler):
             #    print("Starting the internal clock")
             if self.persistent_data['token'] != None:
                 if len(self.persistent_data['token']) > 10:
+                    if self.DEBUG:
+                        print("jwt token is present")
                     self.update_things() 
                       
             t = threading.Thread(target=self.clock)
@@ -211,25 +232,6 @@ class WebinterfaceAPIHandler(APIHandler):
         except:
             if self.DEBUG:
                 print("Error starting the clock thread")
-
-
-
-    def get_new_uuid(self):
-        # clear old data
-        if 'hash' in self.persistent_data:
-            if self.persistent_data['hash'] != None:
-                r = requests.post(self.web_url + 'put_things', data={"hash":self.persistent_data['hash'], "time":0 })
-                a = requests.post(self.web_url + 'get_actions', data={"hash":self.persistent_data['hash'], "uuid":self.persistent_data['uuid'] })
-              
-        # get new UUID
-        a = requests.get(self.web_url + 'get_uuid')
-        #print("actions data: " + str(a.content))
-        uuid_json = a.json()
-        if self.DEBUG:
-            print("new anonymous ID: " + str(uuid_json))
-        if uuid_json['uuid'] != "error":
-            self.persistent_data['uuid'] = uuid_json['uuid']
-            self.save_persistent_data()
 
 
 
@@ -305,13 +307,13 @@ class WebinterfaceAPIHandler(APIHandler):
 
 
 
-#
-#  CLOCK
-#
+    #
+    #  CLOCK
+    #
 
     def clock(self):
         """ Runs every second """
-        seconds_counter = 0
+        #seconds_counter = 0
         while self.running:
             time.sleep(1)
             #print(".")
@@ -325,39 +327,46 @@ class WebinterfaceAPIHandler(APIHandler):
                 self.should_save_to_persistent = False
                 
             
-            seconds_counter += 1
+            #seconds_counter += 1
             #if self.DEBUG:
             #    print("seconds_counter: " + str(seconds_counter))
-            if seconds_counter >= self.poll_interval:
+            if (time.time() - self.last_clock_poll_time) >= self.poll_interval:
                 #if self.DEBUG:
                 #    print("seconds passed: " + str(seconds_counter))
-                seconds_counter = 0
+                #seconds_counter = 0
                 
+                if self.DEBUG2:
+                    print("time: " + str(int( time.time() )))
+                    print("seconds since last_clock_poll_time: " + str( time.time() - self.last_clock_poll_time ))
+                    
+                self.last_clock_poll_time = time.time()
+                    
                 try:
                 
+                    # How long ago did we see activity on the other end?
                     if self.last_active_state == True and self.last_activity_time < time.time() - 60:
                         self.last_active_state = False
                         self.adapter.devices['webinterface'].properties["activity"].update(False) # the outside user is no longer active
                 
-                    #if not hasattr(self.persistent_data, 'hash'):
+                    # Has a password been set?
                     if not 'hash' in self.persistent_data:
                         #if self.DEBUG:
                         #    print("missing hash: " + str(self.persistent_data))
                         continue
-                    
                     if self.persistent_data['hash'] == None:
                         #if self.DEBUG:
                         #    print("hash was still none: " + str(self.persistent_data))
                         continue
                     
+                    # Has a UUID been set?
                     if not 'uuid' in self.persistent_data:
                         continue
-                    
                     if self.persistent_data['uuid'] == None:
                         continue
                     
+                    # Is outside access enabled?
                     if self.persistent_data['enabled']:
-                        if self.DEBUG:
+                        if self.DEBUG2:
                             print("\nENABLED")
                         self.previous_enabled_state = True
                         #print("Did the things API call. Self.things is now:")
@@ -366,13 +375,27 @@ class WebinterfaceAPIHandler(APIHandler):
                     
                         timejson = {}
                         try:
-                            parameters = {"fresh":False, "hash": self.persistent_data['hash'], "uuid": self.persistent_data['uuid'] }
-                            if self.DEBUG:
-                                print("calling /get_time: " + str(parameters))
-                            q = requests.post( self.web_url + "get_time", data = parameters)
-                            #print("q.content = " + str(q.content))
+                            if self.persistent_data['hash2']:
+                                if self.DEBUG2:
+                                    print("hash2 is present")
+                                parameters = {"fresh":False,
+                                                "hash2": self.persistent_data['hash2'], 
+                                                "uuid": self.persistent_data['uuid'] 
+                                            }
+                            else:
+                                if self.DEBUG:
+                                    print("hash2 is NOT present: " + str(self.persistent_data['hash2']))
+                                parameters = {"fresh":False, 
+                                                "hash": self.persistent_data['hash'],
+                                                "uuid": self.persistent_data['uuid'] 
+                                            }
+                            if self.DEBUG2:
+                                print("calling /get_time with parameters: " + str(parameters))
+                            q = requests.post( self.web_url + "get_time", data = parameters )
+                            if self.DEBUG2:
+                                print("q.content = " + str(q.content))
                             timejson = q.json()
-                            if self.DEBUG:
+                            if self.DEBUG2:
                                 print("/get_time returned: " + str(timejson))
                         except Exception as ex:
                             if self.DEBUG:
@@ -384,8 +407,8 @@ class WebinterfaceAPIHandler(APIHandler):
                         #print("timejson = " + str(timejson))
                         #print("loading json via loads")
                         #timejson = json.loads( timejson )
-                
-                        #print(str(timejson))
+                        if self.DEBUG2:
+                            print("timejson: " + str(timejson))
                         #print(str(time.time()))
                         if 'time' in timejson:
                             #if self.DEBUG:
@@ -408,11 +431,25 @@ class WebinterfaceAPIHandler(APIHandler):
                             if time_delta < 15:
                                 if self.DEBUG:
                                     print("time delta was smaller than 15 seconds")
+                                
+                                self.poll_interval = 4 # speed up the rate with which we communicate with the other end
                                     
-                                self.poll_interval = 4
+                                hash_match = False
                                     
-                                if 'hash' in timejson:
-                                    if self.persistent_data['hash'] == str(timejson['hash']):
+                                if 'hash' in timejson or 'hash2' in timejson:
+                                    if 'hash' in timejson:
+                                        if self.persistent_data['hash'] == str(timejson['hash']) or self.persistent_data['hash2'] == str(timejson['hash']):
+                                            if self.DEBUG:
+                                                print("hash1 was a winner")
+                                            hash_match = True
+                                        
+                                    if hash_match == False and 'hash2' in timejson:
+                                        if self.persistent_data['hash'] == str(timejson['hash2']) or self.persistent_data['hash2'] == str(timejson['hash2']):
+                                            if self.DEBUG:
+                                                print("hash2 was a winner")
+                                            hash_match = True
+                                        
+                                    if hash_match:
                                         #print("hash == hash, and time is ok too.")
                     
                                         self.last_activity_time = time.time()
@@ -495,20 +532,56 @@ class WebinterfaceAPIHandler(APIHandler):
                                                 #    print("sending: " + str(things_string))
                                                 #encrypted_string = aes256.encrypt(things_string, keyring.get_password('webinterface', webinterface))
                                                 encrypted_string = aes256.encrypt(things_string, self.persistent_data['password'])
+                                                 # the new safer way, using the hash of the password as the password. That way the system doesn't have to store the actual password - on either end. Only the hash.
+                                                
                                                 #encoded_string = encrypted_string.decode('utf-8')
+                                                #if self.DEBUG:
+                                                #    print("0. encrypted_string:")
+                                                #    print(str(encrypted_string))
                                                 #print("encrypted string: ")
                                                 #print(str(encrypted_string.decode('utf-8')))
                         
-                                                decoded_base64_string = base64.b64decode(encrypted_string)
-                                                #print("decoded_base64_string:")
-                                                #print(str(decoded_base64_string))
+                                                # TODO: Why is the string decoded, encoded and decoded again?
+                                                #decoded_base64_string = base64.b64decode(encrypted_string) # TODO: Eh? Is the encrypted data already base64 encoded? 
+                                                #if self.DEBUG:
+                                                #    print("1. decoded_base64_string:")
+                                                #    print(str(decoded_base64_string))
                         
-                                                base64_string = base64.b64encode(encrypted_string) # .encode('utf-8')  # .decode('UTF-8')
-                                                decoded_string = base64_string.decode('utf-8')
+                                                #base64_string = base64.b64encode(encrypted_string) # .encode('utf-8')  # .decode('UTF-8')
+                                                #if self.DEBUG:
+                                                #    print("2. re-encoded base64_string:")
+                                                #    print(str(base64_string))
+                                                
+                                                #decoded_string = base64_string.decode('utf-8')
+                                                #if self.DEBUG:
+                                                #    print("3. re-decoded decoded_string:")
+                                                #    print(str(decoded_string))
+                                                #    if(decoded_string == decoded_base64_string):
+                                                #        print("eh? So we're back at the start with the base64 encoding/decoding??")
+                                                #    else:
+                                                #        print("OK, so the base64 encoding and decoding resulted in different strings somehow?")
+                                                #        
+                                                #        test = encrypted_string.decode('utf-8')
+                                                #        if(decoded_string == test):
+                                                #            print("WHOA, we can skip a step")
+                                                #        else:
+                                                #            print("NOPE, still different with utf8 decoding")
+                                                #            result of this test: it turned out to still be different. Interesting...
+                                                        
                                                 #print("decoded base64 string:")
                                                 #print(decoded_string)
                                         
-                                                r = requests.post(self.web_url + 'put_things', data={"hash":self.persistent_data['hash'], "uuid":self.persistent_data['uuid'], "time":time.time(), "encrypted":encrypted_string.decode('utf-8') }) # json={"hash":self.persistent_data['hash'],"encrypted": encrypted_string.decode('utf-8')})
+                                        
+                                                # and now the newer version
+                                                if self.DEBUG:
+                                                    print("encrypting things data with hash: " + str(self.persistent_data['hash']))
+                                                encrypted_string2 = aes256.encrypt(things_string, self.persistent_data['hash'])
+                                                #decoded_base64_string2 = base64.b64decode(encrypted_string2)
+                                                #base64_string2 = base64.b64encode(encrypted_string2)
+                                                #decoded_string2 = base64_string.decode('utf-8')
+                                                
+                                                #r = requests.post(self.web_url + 'put_things', data={"hash":self.persistent_data['hash'], "hash2":self.persistent_data['hash2'], "uuid":self.persistent_data['uuid'], "time":time.time(), "encrypted":encrypted_string.decode('utf-8'), "encrypted2":encrypted_string2.decode('utf-8') }) # json={"hash":self.persistent_data['hash'],"encrypted": encrypted_string.decode('utf-8')})
+                                                r = requests.post(self.web_url + 'put_things', data={"hash":self.persistent_data['hash2'], "uuid":self.persistent_data['uuid'], "time":time.time(), "encrypted":encrypted_string2.decode('utf-8') }) # json={"hash":self.persistent_data['hash'],"encrypted": encrypted_string.decode('utf-8')})
                                         except Exception as ex:
                                             if self.DEBUG:
                                                 print("Error posting latest things states to web: " + str(ex))
@@ -517,16 +590,16 @@ class WebinterfaceAPIHandler(APIHandler):
                                         
                                     else:
                                         if self.DEBUG:
-                                            print("hashes (passwords) did not match. Deleting data on proxy server.")
-                                        if seconds_counter == 0:
-                                            r = requests.post(self.web_url + 'delete', data={"hash":self.persistent_data['hash'], "uuid":self.persistent_data['uuid']}) # ask the server to delete all the data (which it does by itself already too, each time the web UI loads data)
-                                            if self.DEBUG:
-                                                print("data on proxy deleted? " + str(r.text))
+                                            print("Warning, hashes (passwords) did not match. Could be malicious, so deleting data on proxy server, just to be safe.")
+                                        #if seconds_counter == 0:
+                                        #r = requests.post(self.web_url + 'delete', data={"hash":self.persistent_data['hash'], "uuid":self.persistent_data['uuid']}) # ask the server to delete all the data (which it does by itself already too, each time the web UI loads data)
+                                        r = requests.post(self.web_url + 'delete', data={"hash2":self.persistent_data['hash2'], "uuid":self.persistent_data['uuid']}) # ask the server to delete all the data (which it does by itself already too, each time the web UI loads data)
+                                        if self.DEBUG:
+                                            print("data on proxy deleted? " + str(r.text))
                     
                             # if time_delta > 15 seconds
                             else:
-                                # if there is nobody at the other end
-                                
+                                # if there is nobody at the other end. The web interface has to keep polling the proxy at relatively high speed.
                                     
                                 if self.DEBUG:
                                     print("time delta was larger than 15 seconds: " + str(time_delta))
@@ -536,14 +609,19 @@ class WebinterfaceAPIHandler(APIHandler):
                                     if self.DEBUG:
                                         print("data on proxy deleted? " + str(r.text))
                                 
-                                self.poll_interval = 10
+                                self.poll_interval = 10 # slow down the rate at which the proxy is polled
                                 
                                 if time_delta > 1800:
-                                    self.poll_interval = 20
+                                    self.poll_interval = 20  # if it's been quite a while, slow down the rate even more to keep the server happy.
                                 
                                 #delete_result = r.json()
                                 #if self.DEBUG:
                                 #    print("- delete result: " + str(delete_result))
+                                
+                                
+                            if self.DEBUG:
+                                print("self.poll_interval (communication speed): " + str(self.poll_interval))
+                                
                         else:
                             if self.DEBUG:
                                 print("clock: error: no time response?")
@@ -567,13 +645,58 @@ class WebinterfaceAPIHandler(APIHandler):
                         
 
 
+
+    def get_new_uuid(self):
+        # clear old data
+        try:
+            if 'hash2' in self.persistent_data:
+                if self.persistent_data['hash2'] != None:
+                
+                    # sets time to zero, clearing any things that the other side may not have picked up yet.
+                    r = requests.post(self.web_url + 'put_things', data={"hash":self.persistent_data['hash'],"hash2":self.persistent_data['hash2'], "time":0 })
+                
+                    # requesting the latest actions also clears them from the proxy server
+                    a = requests.post(self.web_url + 'get_actions', data={"hash":self.persistent_data['hash'],"hash2":self.persistent_data['hash2'], "uuid":self.persistent_data['uuid'] })
+              
+            # get new UUID
+            a = requests.get(self.web_url + 'get_uuid')
+            #print("actions data: " + str(a.content))
+            uuid_json = a.json()
+            if self.DEBUG:
+                print("get_uuid response: " + str(uuid_json))
+        
+            if uuid_json['uuid'].startswith("error"):
+                if self.DEBUG:
+                    print("get_uuid returned an error (probably rate limit")
+                return False
+            else:
+                self.persistent_data['uuid'] = uuid_json['uuid']
+                self.save_persistent_data()
+                return True
+                
+        except Exception as ex:
+            if self.DEBUG:
+                print("Error in get_new_uuid: " + str(ex))
+        return False
+        
+
     # The api request to /things doesn't serve the latest data somehow. This fixes that.
     def update_things(self):
         #if self.DEBUG:
         #    print("in update things")
         try:
             
-           # do_api_call_for_all_things = True
+            if self.update_things_busy:
+                if self.DEBUG:
+                    print("already doing update_things")
+                return
+            
+            self.update_things_busy = True
+            
+            if self.DEBUG:
+                getting_all_things_stopwatch_start = time.time()
+            
+            # do_api_call_for_all_things = True
             if self.should_get_all_things_from_api:
                 #if self.DEBUG:
                 #    print("update all the things")
@@ -604,19 +727,24 @@ class WebinterfaceAPIHandler(APIHandler):
                 thing_counter += 1 
                 
                 try:
-                    thing_name = thing['href'].rsplit('/', 1)[-1]
+                    thing_id = thing['href'].rsplit('/', 1)[-1]
                     #print("thing: " + str(thing))
-                    new_simple_things.append({'title':thing['title'], 'name':thing_name})
+                    
+                    is_allowed = False
+                    if thing_id in self.persistent_data['allowed_things']:
+                        is_allowed = True
+                        
+                    new_simple_things.append({'title':thing['title'], 'id':thing_id, 'allowed':is_allowed})
                 except Exception as ex:
                     if self.DEBUG:
-                        print("update things: no thing name?" + str(ex))
+                        print("update things: no thing id?" + str(ex))
                 
                 
-                if thing_name not in self.persistent_data['allowed_things']:
+                if thing_id not in self.persistent_data['allowed_things']:
                     continue
                 
-                    
-                full_thing = self.api_get(thing['href'])                
+                
+                #full_thing = self.api_get(thing['href']) # TODO: this step is superfluous?
                 #print("\n\n" + str(full_thing))
                 
                 for prop in thing['properties']:
@@ -628,7 +756,7 @@ class WebinterfaceAPIHandler(APIHandler):
                         
                         if 'value' in thing['properties'][prop]:
                             if self.DEBUG:
-                                print("value was already present in this property. It was: " + str(thing['properties'][prop]['value']))
+                                print("value was already present in this property, but is pobably outdated. It was: " + str(thing['properties'][prop]['value']))
                             
                         using_forms = False       
                         if 'forms' in thing['properties'][prop]:
@@ -654,11 +782,11 @@ class WebinterfaceAPIHandler(APIHandler):
                     
                         if href != "":
                             
-                            #if self.DEBUG:
-                            #    print("href = " + str(href))
+                            if self.DEBUG:
+                                print("update_things: property href = " + str(href))
                             prop_val = self.api_get(href)
-                            #if self.DEBUG:
-                            #    print("prop_val: " + str(prop_val))
+                            if self.DEBUG:
+                                print("update_things: API returned prop_val: " + str(prop_val))
                             for key in prop_val:
                                 if key != 'error':
                                     
@@ -677,6 +805,7 @@ class WebinterfaceAPIHandler(APIHandler):
                                     if self.DEBUG:
                                         print("-- api property query returned error: " + str(prop_val))
                                     pass
+                                    # TODO: an error likely indicates the thing is not available, in which case all the things's properties could be skipped to save time?
                         
                     except Exception as ex:
                         if self.DEBUG:
@@ -692,23 +821,27 @@ class WebinterfaceAPIHandler(APIHandler):
             
             self.simple_things = new_simple_things
             
-            # create subset of things that may be sent
-            
+            # create subset of things that may be sent. This time the basis is the 'full-fat' webthings api things data, with all the property details needed to generate the UI on the other end.
             to_send = []
             for thing in self.things:
                 try:
-                    thing_name = thing['href'].rsplit('/', 1)[-1]
+                    thing_id = thing['href'].rsplit('/', 1)[-1]
                     if 'allowed_things' in self.persistent_data:
-                        if thing_name in self.persistent_data['allowed_things']:
+                        if thing_id in self.persistent_data['allowed_things']:
                             # TODO maybe implement a system that checks if things have changed since last time, and only send those.
                             if self.DEBUG:
-                                print("allowed thing: " + str(thing_name))
+                                print("allowed thing: " + str(thing_id))
                             to_send.append(thing)
                 
                 except Exception as ex:
                     if self.DEBUG:
                         print("error in creating allowed things data: " + str(ex))
             self.things_to_send = to_send
+            
+            if self.DEBUG:
+                print("Getting all things took this many seconds: " + str(time.time() - getting_all_things_stopwatch_start ))
+            
+            self.update_things_busy = False
             
         except Exception as ex:
             if self.DEBUG:
@@ -762,9 +895,15 @@ class WebinterfaceAPIHandler(APIHandler):
                         print("hash: " + str(self.persistent_data['hash']))
                         print("things: " + str(self.simple_things))
                         print("allowed things: " + str(self.persistent_data['allowed_things']))
+                        print("self.persistent_data['hash2']: " + str(self.persistent_data['hash2']))
                         #print("self.persistent_data = " + str(self.persistent_data))
                         
                     self.update_things()
+                        
+                    hash_present = False
+                    
+                    if self.persistent_data['hash2'] != None and self.persistent_data['hash2'] != "":
+                        hash_present = True
                         
                     return APIResponse(
                       status=200,
@@ -774,7 +913,7 @@ class WebinterfaceAPIHandler(APIHandler):
                                           'web_url': self.web_url, 
                                           'enabled': self.persistent_data['enabled'],
                                           'uuid': self.persistent_data['uuid'],
-                                          'hash': self.persistent_data['hash'],
+                                          'hash_present': hash_present,
                                           'things':self.simple_things,
                                           'allowed_things': self.persistent_data['allowed_things'],
                                           'debug':self.DEBUG
@@ -785,18 +924,18 @@ class WebinterfaceAPIHandler(APIHandler):
                 elif action == 'get_new_uuid':
                     if self.DEBUG:
                         print('ajax handling get_new_uuid')
-                    self.get_new_uuid()
-                    time.sleep(.4)
+                    state = self.get_new_uuid()
+                    #time.sleep(.4)
                     return APIResponse(
                       status=200,
                       content_type='application/json',
-                      content=json.dumps({'state' : True, 
-                                          'message' : '', 
+                      content=json.dumps({'state' : state, 
+                                          'message' : '',
                                           'web_url': self.web_url, 
-                                          'hash': self.persistent_data['hash'], 
                                           'uuid': self.persistent_data['uuid'] 
                                       }),
                     )
+                    
                     
                 elif action == 'save_token':
                     if self.DEBUG:
@@ -829,8 +968,9 @@ class WebinterfaceAPIHandler(APIHandler):
                     
                 elif action == 'save_hash':
                     if self.DEBUG:
-                        print('ajax handling save_hash')
+                        print('ajax handling save_hash. body: ' + str(request.body))
                         
+                    state = True
                     #self.persistent_data['password'] = str(request.body['password'])
                     try:
                         #connection = secretstorage.dbus_init()
@@ -839,30 +979,42 @@ class WebinterfaceAPIHandler(APIHandler):
                         #item = collection.create_item('webinterface', attributes, b'pa$$word')
                             
                         #keyring.set_password("webinterface", "webinterface", str(request.body['password']))
-                        self.persistent_data['password'] = str(request.body['password'])
+                        #self.persistent_data['password'] = str(request.body['password'])
+                        if self.persistent_data['hash'] != str(request.body['hash']) or self.persistent_data['hash2'] != str(request.body['hash2']):
+                            self.persistent_data['hash'] = str(request.body['hash'])
+                            self.persistent_data['hash2'] = str(request.body['hash2'])
+                            self.should_save_to_persistent = True
+                        
+                        hash_present = False
+                        if self.persistent_data['hash2'] != "" and self.persistent_data['hash2'] != None:
+                            hash_present = True
                         
                     except Exception as ex:
                         if self.DEBUG:
                             print("Error adding password to secure storage: " + str(ex))
+                        state = False
                     
                     #self.persistent_data['hash'] = str(request.body['hash']) # if the browser UI generates the hash, it might improve cmopatibiity, since the same libraries will be used.
-                    hashed = str( hashlib.sha512( bytes(self.persistent_data['password'], 'utf-8') ).hexdigest() )
-                    if self.persistent_data['hash'] != hashed:
-                        self.persistent_data['hash'] = hashed
-                        self.should_save_to_persistent = True
+                    #hashed = str( hashlib.sha512( bytes(self.persistent_data['password'], 'utf-8') ).hexdigest() )
+                    #if self.persistent_data['hash'] != hashed:
+                    #    self.persistent_data['hash'] = hashed
+                    #    self.should_save_to_persistent = True
                     
                     return APIResponse(
                       status=200,
                       content_type='application/json',
-                      content=json.dumps({'state' : True, 
+                      content=json.dumps({'state' : state, 
                                           'message' : '', 
-                                          'web_url': self.web_url, 
-                                          'uuid': self.persistent_data['uuid'],
-                                          'hash': self.persistent_data['hash'],
-                                          'things':self.simple_things,
-                                          'allowed_things': self.persistent_data['allowed_things']
+                                          'hash_present':hash_present
+                                          #'web_url': self.web_url, 
+                                          #'uuid': self.persistent_data['uuid'],
+                                          #'hash': self.persistent_data['hash'],
+                                          #'hash2': self.persistent_data['hash2'],
+                                          #'things':self.simple_things,
+                                          #'allowed_things': self.persistent_data['allowed_things']
                                           }),
                     )
+                    
                     
                 # Save which devices may be accessed
                 elif action == 'save_allowed':
@@ -885,6 +1037,7 @@ class WebinterfaceAPIHandler(APIHandler):
                                           'allowed_things': self.persistent_data['allowed_things']
                                           }),
                     )
+                    
                     
                 # Whether outside access is allowed at all
                 elif action == 'outside_access':
@@ -965,6 +1118,7 @@ class WebinterfaceAPIHandler(APIHandler):
         #    print("GET PATH = " + str(api_path))
             #print("intent in api_get: " + str(intent))
         #print("GET TOKEN = " + str(self.persistent_data['token']))
+        
         if self.persistent_data['token'] == None:
             print("API GET: PLEASE ENTER YOUR AUTHORIZATION CODE IN THE SETTINGS PAGE")
             #self.set_status_on_thing("Authorization code missing, check settings")
@@ -979,38 +1133,54 @@ class WebinterfaceAPIHandler(APIHandler):
             #if self.DEBUG:
             #    print("API GET: " + str(r.status_code) + ", " + str(r.reason))
 
-            if r.status_code != 200:
-                #if self.DEBUG:
-                #    print("API returned a status code that was not 200. It was: " + str(r.status_code))
+            if r.status_code < 200 or r.status_code > 208:
+                if self.DEBUG:
+                    print("API returned a status code that was not 200-208. It was: " + str(r.status_code))
                 return {"error": str(r.status_code)}
                 
             else:
                 to_return = r.text
                 try:
-                    if self.DEBUG:
-                        print("api_get: received: " + str(r))
+                    #if self.DEBUG:
+                        #print("api_get: received r: " + str(r))
+                        #print("api_get: received r.text: ->" + str(r.text) + "<-")
+                        #print("api_get: received r.text type: ->" + str(type(r.text)) + "<-")
+                        
                     #for prop_name in r:
                     #    print(" -> " + str(prop_name))
+                    
+                    #if len(r.text) == 0:
+                    #    if self.DEBUG:
+                    #        print("an empty string was returned.")
+                    #    #return {"error": 204}
+                    
                     if not '{' in r.text:
                         #if self.DEBUG:
                         #    print("api_get: response was not json (gateway 1.1.0 does that). Turning into json...")
                         
                         if 'things/' in api_path and '/properties/' in api_path:
-                            if self.DEBUG:
-                                print("properties was in api path: " + str(api_path))
-                            likely_property_name = api_path.rsplit('/', 1)[-1]
+                            #if self.DEBUG:
+                            #    print("properties was in api path: " + str(api_path))
+                            likely_property_id = api_path.rsplit('/', 1)[-1]
+                            #if self.DEBUG:
+                            #    print("likely_property_name: " + str(likely_property_name))
                             to_return = {}
-                            to_return[ likely_property_name ] = json.loads(r.text)
+                            if len(r.text) == 0:
+                                to_return[ likely_property_id ] = r.text
+                            else:
+                                to_return[ likely_property_id ] = json.loads(r.text)
                             #if self.DEBUG:
                             #    print("returning fixed: " + str(to_return))
                             return to_return
-                                
+                    else:
+                        pass
+                        #if self.DEBUG:
+                        #    print("api_get warning: { was in r.text")
                 except Exception as ex:
-                    if self.DEBUG:
-                        print("api_get_fix error: " + str(ex))
+                    print("api_get_fix error: " + str(ex))
                         
                 #if self.DEBUG:
-                #    print("returning without 1.1.0 fix: " + str(r.text))
+                #    print("returning without 1.1.0 fix")
                 return json.loads(r.text)
             
         except Exception as ex:
@@ -1073,15 +1243,25 @@ class WebinterfaceAPIHandler(APIHandler):
                 print("API PUT: " + str(r.status_code) + ", " + str(r.reason))
                 print("PUT returned: " + str(r.text))
 
-            if r.status_code != 200:
+            if r.status_code < 200 or r.status_code > 208:
                 if self.DEBUG:
                     print("Error communicating: " + str(r.status_code))
                 return {"error": str(r.status_code)}
             else:
-                if simplified:
-                    return_value = {property_was:json.loads(r.text)} # json.loads('{"' + property_was + '":' + r.text + '}')
-                else:
-                    return_value = json.loads(r.text)
+                return_value = {}
+                try:
+                    if len(r.text) != 0:
+                        if simplified:
+                            if property_was != None:
+                                if not '{' in r.text:
+                                    return_value[property_was] = r.text
+                                else:
+                                    return_value[property_was] = json.loads(r.text) # json.loads('{"' + property_was + '":' + r.text + '}')
+                        else:
+                            return_value = json.loads(r.text)
+                except Exception as ex:
+                    if self.DEBUG:
+                        print("Error reconstructing put response: " + str(ex))
                 
                 return_value['succes'] = True
                 return return_value
@@ -1115,11 +1295,11 @@ class WebinterfaceAPIHandler(APIHandler):
             #        print("Persistence file existed. Will try to save to it.")
 
 
-            with open(self.persistence_file_path) as f:
-                if self.DEBUG:
-                    print("saving persistent data: " + str(self.persistent_data))
-                json.dump( self.persistent_data, open( self.persistence_file_path, 'w+' ) )
-                return True
+            #with open(self.persistence_file_path) as f:
+            if self.DEBUG:
+                print("saving persistent data: " + str(self.persistent_data))
+            json.dump( self.persistent_data, open( self.persistence_file_path, 'w+' ), indent=4 )
+            return True
 
         except Exception as ex:
             if self.DEBUG:

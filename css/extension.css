@@ -30,6 +30,22 @@
 }
 
 
+
+
+/*  general  */
+
+#extension-webinterface-view button{
+    cursor:pointer;
+    padding:1rem 2rem;
+    border-radius:.5rem;
+    background-color:rgba(0,0,0,.2);
+    border:none;
+    color:inherit;
+    font-size:1.6rem;
+}
+
+
+
 /*  TABS  */
 
 #extension-webinterface-tab-buttons{
@@ -39,25 +55,33 @@
     overflow: hidden;
     border-radius:.5rem;
     max-width: 76rem;
-    margin: 4rem auto 0 auto;
+    max-width:fit-content;
+    margin: 4rem auto;
 }
 #extension-webinterface-view #extension-webinterface-tab-buttons button{
     background-color: transparent;
-    border-right: 1px solid rgba(0,0,0,.05);
     color: #eee;
     cursor: pointer;
     font-size: 1.8rem;
     padding: 1rem 2rem;
-    border: none;
     border-radius:0;
     margin:0;
 }
+#extension-webinterface-view #extension-webinterface-tab-buttons button:not(:last-of-type){
+    border-right:1px solid rgba(255,255,255,.05);
+}
+
 #extension-webinterface-view #extension-webinterface-tab-buttons button:hover{
     background-color: rgba(0,0,0,.3);
 }
 
 #extension-webinterface-tab-buttons button:last-child{
     float:right;
+}
+
+.extension-webinterface-main-tab-button:not(:last-of-type){
+    border-right:1px solid rgba(255,255,255,.2);
+    box-sizing:border-box;
 }
 
 #extension-webinterface-view #extension-webinterface-tab-buttons .extension-webinterface-tab-selected{
@@ -76,19 +100,34 @@
 }
 
 
+#extension-webinterface-tab-account{
+    margin-bottom:50vh;
+}
+
 
 
 /*  VISIT PAGE  */
 
 
 .extension-webinterface-tip{
+    display:none;
     padding:1rem 2rem;
     background-color:#bf7b00;
-    display:none;
     border-radius:.5rem;
-    margin:2rem;
+    margin:1rem 0;
 }
 
+.extension-webinterface-tip-success{
+    background-color:#090;
+    text-align:center;
+    color:white;
+}
+
+.extension-webinterface-tip-failed{
+    background-color:#900;
+    text-align:center;
+    color:white;
+}
 
 #extension-webinterface-qrcode-container{
     text-align:center;
@@ -137,15 +176,7 @@
 }
 
 
-#extension-webinterface-view button{
-    cursor:pointer;
-    padding:1rem 2rem;
-    border-radius:.5rem;
-    background-color:rgba(0,0,0,.2);
-    border:none;
-    color:inherit;
-    font-size:1.6rem;
-}
+
 
 #extension-webinterface-web-url{
     color:white;

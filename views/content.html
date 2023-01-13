@@ -4,10 +4,10 @@
         <h3 id="extension-webinterface-title"><!--<span id="extension-webinterface-icon"></span>-->Webinterface</h3>
 
     	<div id="extension-webinterface-tab-buttons">
-            <button id="extension-webinterface-tab-button-access" class="extension-webinterface-main-tab-button extension-webinterface-tab-selected">Access</button>
-    		<button id="extension-webinterface-tab-button-account" class="extension-webinterface-main-tab-button">Account</button>
-            <button id="extension-webinterface-tab-button-things" class="extension-webinterface-main-tab-button">Things</button>
-            <button id="extension-webinterface-tab-button-help" class="extension-webinterface-main-tab-button">?</button>
+            <button id="extension-webinterface-tab-button-access" class="extension-webinterface-main-tab-button extension-webinterface-tab-selected">Access</button><button 
+                id="extension-webinterface-tab-button-account" class="extension-webinterface-main-tab-button">Account</button><button 
+                id="extension-webinterface-tab-button-things" class="extension-webinterface-main-tab-button">Things</button><button 
+                id="extension-webinterface-tab-button-help" class="extension-webinterface-main-tab-button">?</button>
         </div>
             
         <div id="extension-webinterface-tab-container">
@@ -25,7 +25,6 @@
                     <input type="checkbox" name="outside-access" id="extension-webinterface-outside-access" value="outside-access">
                     <label for="extension-webinterface-outside-access">Allow outside access</label>
                 </div>
-                
                 
                 <p>You can access the web interface from outside your home by visiting this webpage:</p>
                 
@@ -49,7 +48,7 @@
             
             
             <div id="extension-webinterface-tab-account" class="extension-webinterface-vlak extension-webinterface-tab extension-webinterface-hidden">
-                <p style="text-align:center">To use your web interface you will need an anonymous ID and a password.<br/><br/></p>
+                <p style="text-align:center">To use your Web Interface you will need an anonymous ID and a password.<br/><br/></p>
                 <div id="extension-webinterface-two-column">
                     <div>
                         <h3>Anonymous ID</h3>
@@ -66,7 +65,8 @@
                         <input id="extension-webinterface-password2" type="password" placeholder="Password"/>
                         <br/>
                         <button id="extension-webinterface-save-password" type="button">Save password</button>
-                        
+                        <div id="extension-webinterface-tip-password-saved" class="extension-webinterface-tip extension-webinterface-tip-success">Password saved</div>
+                        <div id="extension-webinterface-tip-password-failed" class="extension-webinterface-tip extension-webinterface-tip-failed">Saving password failed</div>
                     </div>
                 </div>
             </div>
@@ -114,17 +114,6 @@
             </div>
             
         </div>
-            
-            
-        </div>
-
-        <br/>
-        <br/>
-
-        <div id="extension-webinterface-response">
-            <p id="extension-webinterface-response-data"></p>
-        </div>
-        <br/>
 
     </div>
     
