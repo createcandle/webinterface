@@ -376,6 +376,21 @@
 }
 
 
+/*  EXHIBIT MODE  */
+
+
+body.exhibit-mode #extension-webinterface-uuid,
+body.exhibit-mode #extension-webinterface-new-uuid-button,
+body.exhibit-mode #extension-webinterface-save-password,
+{
+    display:none!important;
+}
+
+body.exhibit-mode .extension-webinterface-tab-things
+{
+    pointer-events: none!important
+}
+
 @media screen and (min-width: 1025px) {
 	#extension-webinterface-view{
 		left:9.6rem;

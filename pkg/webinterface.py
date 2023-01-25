@@ -90,6 +90,10 @@ class WebinterfaceAPIHandler(APIHandler):
         self.should_get_all_things_from_api = True # whenever this is set to true, the complete things list is requested from the API. This is a heavy call.
         self.last_clock_poll_time = 0 # the last timestamp at which the clock started to query the proxy
             
+        self.exhibit_mode = False
+        if os.path.isfile('/boot/exhibit_mode.txt'):
+            self.exhibit_mode = True
+            
         #print(self.user_profile)
             
         
@@ -476,30 +480,36 @@ class WebinterfaceAPIHandler(APIHandler):
                                                     if 'encrypted' in message:
                                                         encrypted = message['encrypted']
                                                         if self.DEBUG:
-                                                            print("action encrypted = " + str(encrypted))
+                                                            print("actions encrypted = " + str(encrypted))
                                                         #decrypted = aes256.decrypt(encrypted, keyring.get_password('webinterface', webinterface) ) #self.persistent_data['password'])
-                                                        decrypted = aes256.decrypt(encrypted, self.persistent_data['password'] )
+                                                        decrypted = aes256.decrypt(encrypted, self.persistent_data['hash'] )
                                                 
                                                         if self.DEBUG:
                                                             print("actions decrypted = " + str(decrypted))
-                                                        action = json.loads( decrypted )
-                                                        if self.DEBUG:
-                                                            print("action dict: " + str(action))
-                                                        #for action in actions:
-                                                        #if self.DEBUG:
-                                                        #    print("action url: " + str(action['url']))
-                                                        #print("action value: " + str(action['value']))
-                                                        #print("action: " + str(action))
-                                                        if action['url'] != "" and action['url'] != None:
-                                                            prop_id = os.path.basename(os.path.normpath( action['url'] ))
-                                                            #print("prop_id = " + str(prop_id))
-                                                            #print("action['value'] = " + str(action['value']))
-                                                            data_to_put = { str(prop_id) : action['value'] }
-                                                            #print("data_to_put = " + str(data_to_put))
-                                                            api_put_result = self.api_put( action['url'], data_to_put )
-                                                        else:
+                                                        try:
+                                                            action = json.loads( decrypted )
                                                             if self.DEBUG:
-                                                                print("Error, action url was not ok: " + str(action['url']))
+                                                                print("action dict: " + str(action))
+                                                            #for action in actions:
+                                                            #if self.DEBUG:
+                                                            #    print("action url: " + str(action['url']))
+                                                            #print("action value: " + str(action['value']))
+                                                            #print("action: " + str(action))
+                                                            if action['url'] != "" and action['url'] != None:
+                                                                prop_id = os.path.basename(os.path.normpath( action['url'] ))
+                                                                #print("prop_id = " + str(prop_id))
+                                                                #print("action['value'] = " + str(action['value']))
+                                                                data_to_put = { str(prop_id) : action['value'] }
+                                                                #print("data_to_put = " + str(data_to_put))
+                                                                api_put_result = self.api_put( action['url'], data_to_put )
+                                                            else:
+                                                                if self.DEBUG:
+                                                                    print("Error, action url was not ok: " + str(action['url']))
+                                                                    
+                                                        except Exception as ex:
+                                                            print("Error, decrypted data was not valid json: " + str(ex))
+                                                
+                                                                    
                                                     else:
                                                         if self.DEBUG:
                                                             print("Warning: incoming action data did not contain encrypted actions list. No actions to perform yet.")
@@ -531,7 +541,7 @@ class WebinterfaceAPIHandler(APIHandler):
                                                 #if self.DEBUG:
                                                 #    print("sending: " + str(things_string))
                                                 #encrypted_string = aes256.encrypt(things_string, keyring.get_password('webinterface', webinterface))
-                                                encrypted_string = aes256.encrypt(things_string, self.persistent_data['password'])
+                                                encrypted_string = aes256.encrypt(things_string, self.persistent_data['hash'])
                                                  # the new safer way, using the hash of the password as the password. That way the system doesn't have to store the actual password - on either end. Only the hash.
                                                 
                                                 #encoded_string = encrypted_string.decode('utf-8')
@@ -912,6 +922,7 @@ class WebinterfaceAPIHandler(APIHandler):
                                           'message' : '', 
                                           'web_url': self.web_url, 
                                           'enabled': self.persistent_data['enabled'],
+                                          'exhibit_mode': self.exhibit_mode,
                                           'uuid': self.persistent_data['uuid'],
                                           'hash_present': hash_present,
                                           'things':self.simple_things,

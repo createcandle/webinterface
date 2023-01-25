@@ -8,6 +8,8 @@
         this.debug = false;
       	this.content = '';
         this.persistent_data = null;
+        
+        this.exhibit_mode = false;
 
         const jwt = localStorage.getItem('jwt');
 
@@ -73,6 +75,11 @@
             //console.log("clicked allow-access button.");
             //console.log("allowed?: ", event.target.checked);
             
+            if(this.exhibit_mode){
+                console.warn("web interface: exhibit mode active, not allowed to change outside access state");
+                return false;
+            }
+            
             window.API.postJson(
               `/extensions/${this.id}/api/ajax`,
     					    {'action':'outside_access', 'enabled':event.target.checked}
@@ -98,6 +105,12 @@
         // New UUID
 		document.getElementById('extension-webinterface-new-uuid-button').addEventListener('click', (event) => {
 			//console.log(event);
+            
+            if(this.exhibit_mode){
+                console.warn("web interface: exhibit mode active, not allowed to change uuid");
+                return false;
+            }
+            
             if (confirm('Are you sure?')){
           		this.update_data('get_new_uuid');	
             }
@@ -116,6 +129,12 @@
             //var target = event.currentTarget;
 			//var parent3 = target.parentElement.parentElement.parentElement; //parent of "target"
 			//parent3.classList.add("delete");
+            
+            if(this.exhibit_mode){
+                console.warn("web interface: exhibit mode active, not allowed to change password");
+                return false;
+            }
+            
             try{
                 const password1 = document.getElementById('extension-webinterface-password1').value;
                 const password2 = document.getElementById('extension-webinterface-password2').value;
@@ -229,6 +248,11 @@
         console.log('saving things list');
         var checkboxes = document.querySelectorAll('#extension-webinterface-thing-list input');
         
+        if(this.exhibit_mode){
+            console.warn("web interface: exhibit mode active, not allowed to change things");
+            return false;
+        }
+        
         //document.getElementById('extension-webinterface-thing-list-save-button').style.display = 'none';
         
         if(checkboxes.length > 0){
@@ -295,9 +319,14 @@
     				//this.regenerate_items();
                 
                     if(typeof body['web_url'] != 'undefined' && typeof body['uuid'] != 'undefined'){
-                        const qr_url = body['web_url'] + '?' + body['uuid'];
+                        var qr_url = body['web_url']; // + '?' + body['uuid'];
                     
-                        document.getElementById('extension-webinterface-uuid').value = body['uuid'];
+                        if(this.exhibit_mode == false){
+                            qr_url = qr_url + '?' + body['uuid'];
+                            document.getElementById('extension-webinterface-uuid').value = body['uuid'];
+                        }
+                    
+                        
                         document.getElementById('extension-webinterface-web-url').innerText = body['web_url'];
                         document.getElementById('extension-webinterface-web-url-button').href = qr_url;
                 
@@ -333,6 +362,10 @@
                     
                         if(typeof body.enabled != 'undefined'){
                             document.getElementById('extension-webinterface-outside-access').checked = body.enabled;
+                        }
+                        
+                        if(typeof body.exhibit_mode != 'undefined'){
+                            this.exhibit_mode = body.exhibit_mode;
                         }
                         
                         const thing_list = document.getElementById('extension-webinterface-thing-list');
