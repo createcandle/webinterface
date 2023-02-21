@@ -364,6 +364,9 @@
                             document.getElementById('extension-webinterface-outside-access').checked = body.enabled;
                         }
                         
+                        document.getElementById('extension-webinterface-frontpage').style.display = 'block';
+                        document.getElementById('extension-webinterface-loading-container').style.display = 'none';
+                        
                         if(typeof body.exhibit_mode != 'undefined'){
                             this.exhibit_mode = body.exhibit_mode;
                         }

@@ -21,27 +21,34 @@
                     Select which devices may be controlled on the Things tab
                 </div>
                 
-                <div id="extension-webinterface-allow-toggle-container" class="extension-webinterface-vlak">
-                    <input type="checkbox" name="outside-access" id="extension-webinterface-outside-access" value="outside-access">
-                    <label for="extension-webinterface-outside-access">Allow outside access</label>
+                <div id="extension-webinterface-loading-container">
+					<div class="extension-webinterface-spinner">
+						<div></div><div></div><div></div><div></div>
+					</div>
                 </div>
-                
-                <p>You can access the web interface from outside your home by visiting this webpage:</p>
-                
-                <div id="extension-webinterface-web-url-container" class="extension-webinterface-vlak">
-                    <span id="extension-webinterface-web-url"></span>
-                    
-                    <div style="min-width:20rem">
-                        <a id="extension-webinterface-web-url-button" target="_blank" href="#">
-                            <button>Visit</button>
-                        </a>
-                
-                        <button id="extension-webinterface-show-qr-button">Show QR-Code</button>
+                <div id="extension-webinterface-frontpage">
+                    <div id="extension-webinterface-allow-toggle-container" class="extension-webinterface-vlak">
+                        <input type="checkbox" name="outside-access" id="extension-webinterface-outside-access" value="outside-access">
+                        <label for="extension-webinterface-outside-access">Allow outside access</label>
                     </div>
-                </div>
+                
+                    <p>You can access the web interface from outside your home by visiting this webpage:</p>
+                
+                    <div id="extension-webinterface-web-url-container" class="extension-webinterface-vlak">
+                        <span id="extension-webinterface-web-url"></span>
+                    
+                        <div style="min-width:20rem">
+                            <a id="extension-webinterface-web-url-button" target="_blank" href="#">
+                                <button>Visit</button>
+                            </a>
+                
+                            <button id="extension-webinterface-show-qr-button">Show QR-Code</button>
+                        </div>
+                    </div>
             
-                <div id="extension-webinterface-qrcode-container" style="display:none">
-                    <div id="extension-webinterface-qrcode"></div>
+                    <div id="extension-webinterface-qrcode-container" style="display:none">
+                        <div id="extension-webinterface-qrcode"></div>
+                    </div>
                 </div>
                 
             </div>

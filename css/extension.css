@@ -109,6 +109,10 @@
 /*  VISIT PAGE  */
 
 
+#extension-webinterface-frontpage{
+    display:none;
+}
+
 .extension-webinterface-tip{
     display:none;
     padding:1rem 2rem;
@@ -364,18 +368,6 @@
 }
 
 
-
-@media screen and (max-width: 640px) {
-    #extension-webinterface-view #extension-webinterface-tab-buttons button{
-        padding:1rem;
-    }
-    .extension-webinterface-vlak{
-        margin-left:0;
-        margin-right:0;
-    }
-}
-
-
 /*  EXHIBIT MODE  */
 
 
@@ -390,6 +382,95 @@ body.exhibit-mode .extension-webinterface-tab-things
 {
     pointer-events: none!important
 }
+
+
+
+/*  loading spinner  */
+
+
+#extension-webinterface-loading-container{
+    text-align:center;
+}
+
+#extension-webinterface-loading{
+    text-align:center;
+    margin-top:4rem;
+}
+
+.extension-webinterface-spinner {
+  display: inline-block;
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin:0 auto;
+}
+.extension-webinterface-spinner div {
+  position: absolute;
+  top: 33px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.5);
+  animation-timing-function: cubic-bezier(0, 1, 1, 0);
+}
+.extension-webinterface-spinner div:nth-child(1) {
+  left: 8px;
+  animation: extension-webinterface-spinner1 0.6s infinite;
+}
+.extension-webinterface-spinner div:nth-child(2) {
+  left: 8px;
+  animation: extension-webinterface-spinner2 0.6s infinite;
+}
+.extension-webinterface-spinner div:nth-child(3) {
+  left: 32px;
+  animation: extension-webinterface-spinner2 0.6s infinite;
+}
+.extension-webinterface-spinner div:nth-child(4) {
+  left: 56px;
+  animation: extension-webinterface-spinner3 0.6s infinite;
+}
+@keyframes extension-webinterface-spinner1 {
+  0% {
+    transform: scale(0);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes extension-webinterface-spinner3 {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(0);
+  }
+}
+@keyframes extension-webinterface-spinner2 {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(24px, 0);
+  }
+}
+
+
+
+
+
+
+@media screen and (max-width: 640px) {
+    #extension-webinterface-view #extension-webinterface-tab-buttons button{
+        padding:1rem;
+    }
+    .extension-webinterface-vlak{
+        margin-left:0;
+        margin-right:0;
+    }
+}
+
+
+
 
 @media screen and (min-width: 1025px) {
 	#extension-webinterface-view{
